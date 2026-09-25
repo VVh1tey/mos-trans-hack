@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: Transport
+    folder: Transport
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

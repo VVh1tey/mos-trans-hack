@@ -1,0 +1,41 @@
+{
+  "title": "Transport — service health",
+  "uid": "transport-health",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Online services",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "up{job=~\"backend|ml|ingest|feature-worker|scheduler|archive-worker\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1, "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}]}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "auto", "textMode": "auto"}
+    },
+    {
+      "id": 2,
+      "title": "Recent predictions (empty until backend persists results)",
+      "type": "table",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8},
+      "datasource": {"type": "postgres", "uid": "transport-db"},
+      "targets": [{
+        "refId": "A",
+        "format": "table",
+        "rawQuery": true,
+        "rawSql": "SELECT predicted_at AS time, tr_id, target_stop_id, prediction_seconds, model_name FROM predictions WHERE $__timeFilter(predicted_at) ORDER BY predicted_at DESC LIMIT 50"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "Raw NDTP TCP bytes (parsing pending)",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 18},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "ndtp_bytes_received_total", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "auto", "textMode": "auto"}
+    }
+  ]
+}

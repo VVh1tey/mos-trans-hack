@@ -1,0 +1,14 @@
+name: mos-trans-training
+
+services:
+  trainer:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile.train
+    volumes:
+      - ./dataset:/dataset:ro
+      - ./runs:/runs
+    environment:
+      TRAIN_MODULE: ${TRAIN_MODULE:-experiments.baseline}
+      TRAIN_RUN_NAME: ${TRAIN_RUN_NAME:-}
+      GIT_COMMIT: ${GIT_COMMIT:-unknown}

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Предиктор задержек — каркас</title>
+<style>body{font:16px system-ui;max-width:760px;margin:8vh auto;padding:0 24px;color:#17212b}code{background:#eef2f5;padding:3px 6px;border-radius:4px}li{margin:10px 0}</style>
+<h1>Предиктор задержек</h1>
+<p>Онлайн-контур поднят. Сейчас сервисы работают в режиме заглушек.</p>
+<ul><li>Backend: <code id="state">проверка…</code></li><li>Сохранённых прогнозов: <code id="count">—</code></li><li>Демо-прогноз: <code id="prediction">проверка…</code></li></ul>
+<p>Первый рабочий экран заменит эту страницу в <code>frontend/</code>.</p>
+<script>
+Promise.all([fetch('/health'), fetch('/api/predictions'), fetch('/api/predict', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sample_id: 'demo', cur_dev_s: 42})})]).then(async ([health, predictions, demo]) => {
+  document.getElementById('state').textContent = (await health.json()).status;
+  document.getElementById('count').textContent = (await predictions.json()).predictions.length;
+  const result = await demo.json();
+  document.getElementById('prediction').textContent = `${result.prediction} с (${result.model})`;
+}).catch(() => {
+  document.getElementById('state').textContent = 'недоступен';
+  document.getElementById('prediction').textContent = 'недоступен';
+});
+</script>
+</html>

@@ -1,0 +1,61 @@
+<mxfile host="65bd71144e">
+    <diagram id="training-architecture" name="Обучение · сервисы и артефакты">
+        <mxGraphModel dx="1938" dy="2288" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1850" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FFFFFF;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Обучение · сервисы и артефакты" vertex="1">
+                    <mxGeometry height="55" width="1700" x="50" y="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="source" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="CSV / Parquet + labels" vertex="1">
+                    <mxGeometry height="100" width="220" x="55" y="345" as="geometry"/>
+                </mxCell>
+                <mxCell id="features" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Shared feature builder" vertex="1">
+                    <mxGeometry height="100" width="220" x="340" y="345" as="geometry"/>
+                </mxCell>
+                <mxCell id="catboost" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="CatBoost training" vertex="1">
+                    <mxGeometry height="100" width="220" x="625" y="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="torch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="PyTorch training" vertex="1">
+                    <mxGeometry height="100" width="220" x="625" y="495" as="geometry"/>
+                </mxCell>
+                <mxCell id="evaluate" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Evaluation · MAE" vertex="1">
+                    <mxGeometry height="100" width="220" x="915" y="345" as="geometry"/>
+                </mxCell>
+                <mxCell id="runs_store" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3D9;strokeColor=#D9A441;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="runs/ · манифесты и модели" vertex="1">
+                    <mxGeometry height="100" width="240" x="1210" y="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="submission" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="submission.csv" vertex="1">
+                    <mxGeometry height="100" width="240" x="1210" y="495" as="geometry"/>
+                </mxCell>
+                <mxCell id="postgres" parent="1" style="shape=cylinder3;size=12;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="runs/index.csv · сравнение" vertex="1">
+                    <mxGeometry height="100" width="240" x="1520" y="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge1" edge="1" parent="1" source="source" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="features">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge2" edge="1" parent="1" source="features" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="catboost">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge3" edge="1" parent="1" source="features" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="torch">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge4" edge="1" parent="1" source="catboost" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="evaluate">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge5" edge="1" parent="1" source="torch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="evaluate">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge6" edge="1" parent="1" source="evaluate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="runs_store">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge7" edge="1" parent="1" source="evaluate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="submission">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge8" edge="1" parent="1" source="runs_store" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="postgres">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
