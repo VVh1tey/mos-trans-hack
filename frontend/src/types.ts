@@ -1,0 +1,12 @@
+export type Risk = 'low' | 'medium' | 'high';
+export type Settings = { mediumDelaySeconds: number; highDelaySeconds: number; staleAfterSeconds: number; colors: Record<Risk, string> };
+export type Summary = { activeVehicles: number; routeCount: number; highRiskCount: number; incidentCount: number; averageDelaySeconds: number; worstDelaySeconds: number; freshPercent: number };
+export type Stop = { id: string; name: string; coordinates: [number, number]; delaySeconds: number; scheduledAt: string; predictedAt: string; risk: Risk };
+export type Vehicle = { id: string; routeId: string; routeNumber: string; coordinates: [number, number]; delaySeconds: number; risk: Risk; probability: number; speedKmh: number; targetStop: string; targetStopId: string; observedAt: string; ageSeconds: number; signal: string; segment: string };
+export type Incident = Vehicle & { status: string };
+export type Route = { id: string; number: string; name: string; transport: string; serviceType: 'night'|'day'; coordinates: [number, number][]; stops: Stop[]; summary: Summary; risk: Risk; intervalMinutes: number; vehicles: Vehicle[]; directionCount: number; direction: number; serviceHours: string; officialInterval: string };
+export type HistoryPoint = { time: string; average: number; maximum: number };
+export type HistoryEvent = { id: string; time: string; routeId: string; routeNumber: string; vehicleId: string; message: string; delaySeconds: number; risk: Risk };
+export type Snapshot = { mode: 'demo' | 'live'; generatedAt: string; servedAt: string; notice: string; settings: Settings; summary: Summary; routes: Route[]; incidents: Incident[]; history: HistoryPoint[]; historyEvents: HistoryEvent[] };
+export type ScenarioParameters = { extraVehicles: number; horizonMinutes: number; direction: number; startStopId: string; startTime: string };
+export type Scenario = { mode: string; model: string; routeId: string; parameters: ScenarioParameters; notice: string; metrics: {label: string; unit: string; baseline: number; scenario: number}[]; series: {minute: number; baseline: number; scenario: number}[] };

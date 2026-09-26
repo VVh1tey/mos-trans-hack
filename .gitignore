@@ -42,6 +42,9 @@ dist/
 # Frontend
 node_modules/
 frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+.impeccable/review/
 *.tsbuildinfo
 
 # Local tools
