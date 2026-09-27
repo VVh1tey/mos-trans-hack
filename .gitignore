@@ -16,6 +16,7 @@
 !/data/moscowmap/routes.csv
 !/data/moscowmap/stops.csv
 !/data/moscowmap/routes.geojson
+!/data/moscowmap/osm_day_routes.json
 /artifacts/
 /outputs/
 /models/

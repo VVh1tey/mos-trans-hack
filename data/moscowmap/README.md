@@ -1,23 +1,35 @@
-# MoscowMap route archive
+# Route imports and source data
 
-Generated route files belong in this directory. From the repository root run:
+The backend loads JSON files from this directory automatically. The MoscowMap
+browser crawler writes `routes.json`, `routes.csv`, `stops.csv`, and
+`routes.geojson` here. A crawl that downloads zero route pages does not write an
+empty catalog.
+
+## Daytime OpenStreetMap routes
+
+Run from a network that can reach one of the public Overpass servers:
 
 ```sh
-python scripts/scrape_moscowmap.py
+python scripts/scrape_osm_day_routes.py
 ```
 
-The crawler writes `routes.json`, `routes.csv`, `stops.csv`, and
-`routes.geojson` here. The backend imports `routes.json` automatically.
-MoscowMap has returned empty/non-page responses to command-line fetches in this
-environment; the site may require browser JavaScript and may restrict some
-networks. A crawl that downloads zero route pages does not write an empty
-catalog. Official Moscow open-data snapshots are also committed under
-`data/additional/` and provide a reproducible baseline without a live crawl.
+The script writes `osm_day_routes.json` here, where Docker and the local
+backend import it automatically. It includes route geometry, the ordered stop
+members found on each OSM route relation, query metadata and license
+attribution. `--limit N` is for a small trial export; omit it for the full
+query. Public route mapping can be incomplete, so this archive represents the
+OSM-mapped daytime routes in the query area, not a guaranteed complete
+official route catalog. Review its route count and missing relation summary
+before treating it as complete.
 
-If a normal HTTP response has no links, the crawler uses Playwright from
-`frontend/` to render pages, try the number-range tabs, expand the full route
-list, and visit route pages. Install dependencies and Chromium once before
-scraping:
+The source data is OpenStreetMap under ODbL 1.0. Keep the attribution visible
+where the data is displayed and retain the source metadata in the archive.
+See <https://www.openstreetmap.org/copyright>.
+
+## MoscowMap fallback
+
+MoscowMap has returned HTTP 403 in some networks. Its crawler can use Playwright
+to render JavaScript pages if the site is reachable:
 
 ```sh
 cd frontend
@@ -27,5 +39,6 @@ cd ..
 python scripts/scrape_moscowmap.py --limit 1
 ```
 
-The Playwright worker runs headless by default. Set `MOSCOWMAP_HEADLESS=0` to
-show a browser window while diagnosing the site.
+Run `python scripts/scrape_moscowmap.py` without `--limit` for a complete
+crawl. Treat its content according to MoscowMap's reuse terms; no open-data
+license has been established for that site.
