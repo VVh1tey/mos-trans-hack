@@ -86,6 +86,8 @@ def fetch_rendered(url):
     global _browser_worker
     helper = Path(__file__).with_name('moscowmap_browser.mjs')
     if _browser_worker is None:
+        if not helper.exists():
+            raise RuntimeError(f'Playwright worker is missing: {helper}')
         _browser_worker = subprocess.Popen(
             ['node', str(helper)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             text=True, encoding='utf-8', cwd=Path(__file__).resolve().parents[1],
@@ -93,9 +95,13 @@ def fetch_rendered(url):
         atexit.register(_browser_worker.terminate)
     _browser_worker.stdin.write(json.dumps({'url': url}, ensure_ascii=False) + '\n')
     _browser_worker.stdin.flush()
-    line = _browser_worker.stdout.readline()
+    try:
+        line = _browser_worker.stdout.readline()
+    except OSError as exc:
+        raise RuntimeError('Could not read from the Playwright worker') from exc
     if not line:
-        raise RuntimeError('Playwright worker exited without a response; install frontend dependencies and Chromium.')
+        code = _browser_worker.poll()
+        raise RuntimeError(f'Playwright worker exited without a response (exit code {code}); install frontend dependencies and Chromium.')
     result = json.loads(line)
     if result.get('error'):
         raise RuntimeError(f'Playwright could not render {url}: {result["error"]}')

@@ -4,10 +4,9 @@
 import readline from 'node:readline';
 import { chromium } from '../frontend/node_modules/playwright/index.mjs';
 
-// Headed by default to behave like the user's regular browser and avoid the
-// site's bot rules for headless automation. Set MOSCOWMAP_HEADLESS=1 on hosts
-// without a desktop session.
-const browser = await chromium.launch({ headless: process.env.MOSCOWMAP_HEADLESS === '1' });
+// Headless by default so the scraper also works in Docker/CI. Set
+// MOSCOWMAP_HEADLESS=0 to show the page while diagnosing the site.
+const browser = await chromium.launch({ headless: process.env.MOSCOWMAP_HEADLESS !== '0' });
 const context = await browser.newContext({ locale: 'ru-RU' });
 const page = await context.newPage();
 await page.addInitScript(() => {
@@ -17,7 +16,7 @@ const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function collectCatalog(url) {
-  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  let response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await sleep(1200);
   try { await page.waitForLoadState('networkidle', { timeout: 4000 }); } catch {}
 
@@ -37,7 +36,7 @@ async function collectCatalog(url) {
   );
   for (const text of new Set(tabs)) {
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 }) || response;
       await sleep(400);
       await page.getByText(text, { exact: true }).first().click({ timeout: 1500 });
       await sleep(250);
@@ -45,7 +44,7 @@ async function collectCatalog(url) {
     } catch {}
   }
 
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 }) || response;
   await sleep(400);
   const showAll = page.getByText(/\u043f\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c\s+\u0432\u0441\u0435/i).first();
   if (await showAll.count()) {

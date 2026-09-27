@@ -6,9 +6,18 @@ Generated route files belong in this directory. From the repository root run:
 python scripts/scrape_moscowmap.py
 ```
 
-The crawler writes `routes.json`, `routes.csv`, `stops.csv`, and `routes.geojson` here. The backend imports `routes.json` automatically. No catalog is committed yet because MoscowMap returned HTTP 403 to the crawler during this session; rerun from a network where the site permits access. A crawl that downloads zero route pages does not write an empty catalog.
+The crawler writes `routes.json`, `routes.csv`, `stops.csv`, and
+`routes.geojson` here. The backend imports `routes.json` automatically.
+MoscowMap has returned empty/non-page responses to command-line fetches in this
+environment; the site may require browser JavaScript and may restrict some
+networks. A crawl that downloads zero route pages does not write an empty
+catalog. Official Moscow open-data snapshots are also committed under
+`data/additional/` and provide a reproducible baseline without a live crawl.
 
-MoscowMap renders its route links in JavaScript. If a normal HTTP response has no links, the crawler uses the Playwright package from `frontend/` to open a browser, try the number-range tabs and expand “Посмотреть все”, then visit route pages. Install the frontend dependencies and Chromium once before scraping:
+If a normal HTTP response has no links, the crawler uses Playwright from
+`frontend/` to render pages, try the number-range tabs, expand the full route
+list, and visit route pages. Install dependencies and Chromium once before
+scraping:
 
 ```sh
 cd frontend
@@ -18,4 +27,5 @@ cd ..
 python scripts/scrape_moscowmap.py --limit 1
 ```
 
-The browser is visible by default. Set `MOSCOWMAP_HEADLESS=1` to run it without a window when the host has no desktop session.
+The Playwright worker runs headless by default. Set `MOSCOWMAP_HEADLESS=0` to
+show a browser window while diagnosing the site.
