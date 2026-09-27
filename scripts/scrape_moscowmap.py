@@ -96,12 +96,12 @@ def parse(html):
     # in the stop-list section, ending at the next route description section.
     lines = text.splitlines()
     start = next((i for i, line in enumerate(lines)
-                  if re.search(r'список\s+остановок', line, re.I)), None)
+                  if re.search(r'\u0441\u043f\u0438\u0441\u043e\u043a\s+\u043e\u0441\u0442\u0430\u043d\u043e\u0432\u043e\u043a', line, re.I)), None)
     stops = []
     if start is not None:
         for line in lines[start + 1:]:
             normalized = line.strip()
-            if re.search(r'^улицы\s+по\s+маршруту', normalized, re.I):
+            if re.search(r'^\u0443\u043b\u0438\u0446\u044b\s+\u043f\u043e\s+\u043c\u0430\u0440\u0448\u0440\u0443\u0442\u0443', normalized, re.I):
                 break
             match = STOP_LINE.match(normalized)
             if match:
@@ -133,8 +133,10 @@ def parse(html):
 
 def is_catalog_page(url):
     parsed = urlparse(url)
-    return (parsed.netloc in {'www.moscowmap.ru', 'moscowmap.ru'}
-            and parsed.path.startswith(ROOT) and parsed.path.lower().endswith('.html'))
+    host = parsed.netloc.lower().split(':', 1)[0]
+    path = parsed.path.rstrip('/')
+    return (host in {'www.moscowmap.ru', 'moscowmap.ru'}
+            and path.startswith(ROOT) and path != ROOT)
 
 
 def crawl(output, delay=0.4, limit=0):
@@ -159,11 +161,11 @@ def crawl(output, delay=0.4, limit=0):
             parts = path.strip('/').split('/')
             # The root and category pages link to routes; route pages are
             # deeper HTML documents under the same catalog tree.
-            if path != ROOT + '.html' and len(parts) >= 3:
+            if path.rstrip('/') != ROOT + '.html' and len(parts) >= 3:
                 title = ' '.join(page.h1).strip()
                 slug, category = Path(path).stem, parts[1]
                 number = title.split(' - ', 1)[0].strip() if title else slug
-                number = re.sub(r'^(?:автобус|трамвай|троллейбус|электробус|маршрутка|речной транспорт)\s*№?\s*', '', number, flags=re.I).strip()
+                number = re.sub(r'^(?:\u0430\u0432\u0442\u043e\u0431\u0443\u0441|\u0442\u0440\u0430\u043c\u0432\u0430\u0439|\u0442\u0440\u043e\u043b\u043b\u0435\u0439\u0431\u0443\u0441|\u044d\u043b\u0435\u043a\u0442\u0440\u043e\u0431\u0443\u0441|\u043c\u0430\u0440\u0448\u0440\u0443\u0442\u043a\u0430|\u0440\u0435\u0447\u043d\u043e\u0439\s+\u0442\u0440\u0430\u043d\u0441\u043f\u043e\u0440\u0442)\s*\u2116?\s*', '', number, flags=re.I).strip()
                 route_id = f'{category}-{slug}'
                 for stop in stops:
                     stop['id'] = f'{route_id}-{stop["sequence"]}'
@@ -175,10 +177,14 @@ def crawl(output, delay=0.4, limit=0):
                 }
                 print(f'[{len(records)}] {number}: {len(stops)} stops, {len(points)} shape points')
 
+            catalog_links = []
             for href, _ in links:
-                absolute = urljoin(url, href).split('#', 1)[0]
-                if is_catalog_page(absolute) and absolute not in seen and absolute not in queue:
-                    queue.append(absolute)
+                absolute = urljoin(url, href).split('#', 1)[0].split('?', 1)[0]
+                if is_catalog_page(absolute):
+                    catalog_links.append(absolute)
+                    if absolute not in seen and absolute not in queue:
+                        queue.append(absolute)
+            print(f'Fetched {url}: title={" ".join(page.h1)!r}, links={len(links)}, catalog links={len(catalog_links)}')
             # Save pending URLs (rather than already failed/visited URLs) so
             # a resumed crawl does not silently skip pages that failed.
             checkpoint.write_text('\n'.join(queue) + ('\n' if queue else ''), encoding='utf-8')
