@@ -173,12 +173,24 @@ class Replay:
 
     def send(self, event):
         unit = event['unitId']
-        if unit not in self.sockets:
-            connection = socket.create_connection((self.host, self.port), timeout=3)
-            connection.sendall(encode_handshake(unit))
-            self.sockets[unit] = connection
-        self.sockets[unit].sendall(encode_navigation(event, self.sent+2))
-        self.sent += 1
+        packet = encode_navigation(event, self.sent+2)
+        # A receiver restart invalidates cached sockets. Retry the same packet
+        # once; its unchanged ID/time lets ingest deduplicate an ambiguous send.
+        for attempt in range(2):
+            try:
+                if unit not in self.sockets:
+                    connection = socket.create_connection((self.host, self.port), timeout=3)
+                    self.sockets[unit] = connection
+                    connection.sendall(encode_handshake(unit))
+                self.sockets[unit].sendall(packet)
+                self.sent += 1
+                return
+            except OSError:
+                connection = self.sockets.pop(unit, None)
+                if connection is not None:
+                    connection.close()
+                if attempt:
+                    raise
 
     def predict(self, point, source='labeled', stop=None):
         # Explicit allowlist: target_delay_s and future schedule facts never enter inference.

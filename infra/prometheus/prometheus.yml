@@ -11,12 +11,3 @@ scrape_configs:
   - job_name: ingest
     static_configs:
       - targets: ['ingest:9101']
-  - job_name: feature-worker
-    static_configs:
-      - targets: ['feature-worker:9102']
-  - job_name: scheduler
-    static_configs:
-      - targets: ['scheduler:9103']
-  - job_name: archive-worker
-    static_configs:
-      - targets: ['archive-worker:9104']

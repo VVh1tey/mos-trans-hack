@@ -44,6 +44,31 @@ class NDTPTests(unittest.TestCase):
         self.assertEqual(event['coordinates'], [-37.617321, -55.7551234])
         self.assertFalse(event['locationValid'])
 
+    def test_corrupt_length_does_not_swallow_next_frame(self):
+        damaged = bytearray(frame(nav()))
+        struct.pack_into('<H', damaged, 2, len(damaged) * 2 - 15)
+        decoder = Decoder()
+        events = decoder.feed(damaged + frame(nav()))
+        self.assertEqual(len(events), 1)
+        self.assertEqual(decoder.errors, 1)
+        self.assertFalse(decoder.buffer)
+
+    def test_invalid_header_does_not_wait_for_advertised_length(self):
+        damaged = bytearray(frame(nav()))
+        struct.pack_into('<H', damaged, 2, 65535)
+        damaged[8] = 99
+        decoder = Decoder()
+        self.assertEqual(len(decoder.feed(damaged + frame(nav()))), 1)
+
+    def test_every_split_boundary(self):
+        packet = frame(nav())
+        for split in range(len(packet) + 1):
+            with self.subTest(split=split):
+                decoder = Decoder()
+                events = decoder.feed(packet[:split]) + decoder.feed(packet[split:])
+                self.assertEqual(len(events), 1)
+                self.assertEqual(decoder.errors, 0)
+
     def test_short_nav_and_invalid_size(self):
         decoder = Decoder()
         self.assertEqual(decoder.feed(frame(b'\0\0')), [])

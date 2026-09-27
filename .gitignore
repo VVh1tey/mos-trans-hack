@@ -21,13 +21,16 @@
 /outputs/
 /models/
 /mlruns/
-/runs/
+/runs/*
+!/runs/selection.json
+!/runs/20260927T210831784612Z-robust-final/
 /handoff/
 /submission.csv
 *.parquet
 *.pkl
 *.joblib
 *.cbm
+!/runs/20260927T210831784612Z-robust-final/catboost.cbm
 *.pt
 *.pth
 *.onnx

@@ -1,0 +1,9 @@
+{
+  "run_id": "20260927T210831784612Z-robust-final",
+  "rows": 151,
+  "delimiter": ";",
+  "model_sha256": "cfb0fdd12b321e29884582a3072ea3bc73f00b94b18169ac7a520e9dfd2394b3",
+  "csv_sha256": "bc34a222c909e9c488b70bf853b2540b174eeca9e29b33e1dd99a785ac3091b9",
+  "platform_submitted": false,
+  "platform_score": null
+}

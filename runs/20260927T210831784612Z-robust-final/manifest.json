@@ -1,0 +1,35 @@
+{
+  "run_id": "20260927T210831784612Z-robust-final",
+  "module": "experiments.catboost_robust",
+  "model_file": "catboost.cbm",
+  "feature_set": "context12 + missing flags; real-only; missingness augmentation",
+  "evaluation_protocol": "real_only_leave_one_vehicle_out_with_missingness",
+  "parameters": {
+    "iterations": 600,
+    "learning_rate": 0.04,
+    "depth": 4,
+    "l2_leaf_reg": 10,
+    "loss_function": "MAE",
+    "thread_count": 4,
+    "random_seed": 42,
+    "verbose": false,
+    "allow_writing_files": false
+  },
+  "source_sha256": {
+    "catboost_robust.py": "1bcfa3e762d2c4c56c2e092d8196a05064a8df27a753980a928d4e42621647d3",
+    "catboost_context.py": "3359f7255ac4c48bb0a96a9cab3e796e03bd021492c6c50251d1dc979ce3b210"
+  },
+  "input_sha256": {
+    "labels/labels_test.csv": "7c7b0206d7ee6ee66af6baafba311755d5e033cd291410972eb89a231079df95",
+    "labels/labels_train.csv": "b3058d52683091e77d190d6a99b717ad5c44ae02de37cadf47123dd3c534361d",
+    "sample_submission.csv": "e288c1e332bc3ce157f630b155601f8d43d02bcc3bd7e991ade59448b5cbacf3",
+    "test/schedule.csv": "a31023b3ec29942145e31ef0eb93bc5ef4adf49b2d9da5b397f02e03e4665bd3",
+    "test/traffic.csv": "3c74bb9d3cc5e076a2e7f89de7e78fb103c350757d16c9d629de651ee09bf517",
+    "train/schedule.csv": "f7c109efd50d358d202b6c1fc5a7cb5be14ccc489c7adb5f3fd897e326512115",
+    "train/traffic.csv": "1890b36e19765c970b3db3c15fc372e2c6dfcc2b20380679637be9115fe303cd",
+    "validate/points.csv": "284d35f25cf7b13ed3f1ef0556c41910c6e6abfe5c523d2c2d1d36f3d67c64a6",
+    "validate/schedule_plan.csv": "c9b561743a5cb83616941b02b47c5aded89e75218d93c13a282a2e8c790787c8",
+    "validate/traffic.csv": "3c74bb9d3cc5e076a2e7f89de7e78fb103c350757d16c9d629de651ee09bf517"
+  },
+  "warning": "Final model uses all real labels. Do not evaluate it on the old test/validate; use reported out-of-vehicle predictions."
+}

@@ -1,7 +1,6 @@
 """TCP NDTP receiver with a bounded latest-position snapshot and metrics."""
 import json
 import os
-import resource
 import socketserver
 import threading
 import time
@@ -10,6 +9,7 @@ from ndtp import Decoder
 
 lock = threading.Lock()
 vehicles = {}
+generation = 0
 stats = {'bytesReceived': 0, 'framesReceived': 0, 'packetsReceived': 0, 'duplicates': 0,
          'latePackets': 0, 'invalidFixes': 0, 'suspectFixes': 0, 'errors': 0,
          'connections': 0, 'lastReceivedAt': None}
@@ -23,7 +23,7 @@ def resident_memory_bytes():
             resident_pages = int(statm.read().split()[1])
         return resident_pages * os.sysconf('SC_PAGE_SIZE')
     except (OSError, ValueError, IndexError):
-        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+        return 0
 
 
 def accept_event(old, event, received_at):
@@ -44,8 +44,12 @@ def accept_event(old, event, received_at):
         merged['gpsStatus'] = 'poor' if event.get('gpsQuality') == 'poor' else 'lost'
         return merged
     if old and old.get('hasPosition'):
-        dt = event['eventTime'] - (previous_fix_time or old['eventTime'])
+        dt = event['eventTime'] - (previous_fix_time if previous_fix_time is not None else old['eventTime'])
         if dt <= 0:
+            if event['coordinates'] == old['coordinates']:
+                merged.update(positionEventTime=previous_fix_time, hasPosition=True,
+                              gpsStatus=old.get('gpsStatus', 'valid'))
+                return merged
             merged.update(coordinates=old['coordinates'], positionEventTime=previous_fix_time,
                           hasPosition=True, gpsStatus='suspect')
             return merged
@@ -60,6 +64,7 @@ def accept_event(old, event, received_at):
                           hasPosition=True, gpsStatus='suspect')
             return merged
     merged.update(positionEventTime=event['eventTime'], hasPosition=True, gpsStatus='valid')
+    merged['positionReceivedAt'] = received_at
     return merged
 
 
@@ -79,12 +84,15 @@ class PacketHandler(socketserver.BaseRequestHandler):
         self.request.settimeout(120)
         with lock:
             stats['connections'] += 1
+            connection_generation = generation
         try:
             while chunk := self.request.recv(65536):
                 previous_errors, previous_frames = decoder.errors, decoder.frames
                 events = decoder.feed(chunk)
                 now = time.time()
                 with lock:
+                    if connection_generation != generation:
+                        break
                     stats['bytesReceived'] += len(chunk)
                     stats['framesReceived'] += decoder.frames - previous_frames
                     stats['errors'] += decoder.errors - previous_errors
@@ -106,27 +114,25 @@ class PacketHandler(socketserver.BaseRequestHandler):
                             stats['suspectFixes'] += 1
                         if unit not in vehicles and len(vehicles) >= 10000:
                             del vehicles[min(vehicles, key=lambda key: vehicles[key]['receivedAt'])]
-                        if updated.get('hasPosition') and updated.get('gpsStatus') == 'valid':
-                            updated['positionReceivedAt'] = now
-                        elif old and old.get('positionReceivedAt'):
-                            updated['positionReceivedAt'] = old['positionReceivedAt']
                         vehicles[unit] = updated
         except (OSError, TimeoutError):
             pass
         finally:
             with lock:
                 stats['connections'] -= 1
-                if decoder.buffer:
+                if decoder.buffer and connection_generation == generation:
                     stats['errors'] += 1
 
 
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
+        global generation
         if self.path != '/replay/reset':
             self.send_error(404)
             return
         # The replay controller closes its sockets before starting a new timeline.
         with lock:
+            generation += 1
             vehicles.clear()
             for key in stats:
                 if key != 'connections':

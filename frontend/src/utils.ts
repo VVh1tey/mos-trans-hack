@@ -1,5 +1,6 @@
-import type { Risk } from './types';
+import type { Risk, Settings } from './types';
 export const riskLabels: Record<Risk,string> = { low: 'Низкий', medium: 'Средний', high: 'Высокий' };
+export const delayRisk = (seconds: number, settings: Settings): Risk => seconds >= settings.highDelaySeconds ? 'high' : seconds >= settings.mediumDelaySeconds ? 'medium' : 'low';
 export const delay = (seconds: number) => `${seconds > 0 ? '+' : seconds < 0 ? '−' : ''}${Math.floor(Math.abs(seconds)/60)}:${String(Math.abs(seconds)%60).padStart(2,'0')}`;
 export const time = (iso: string) => new Date(iso).toLocaleTimeString('ru-RU', { hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow' });
 export const age = (seconds: number) => seconds < 60 ? `${seconds} сек назад` : `${Math.floor(seconds/60)} мин назад`;

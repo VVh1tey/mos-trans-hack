@@ -82,19 +82,26 @@ class Decoder:
                 self.errors += 1
                 continue
             size = struct.unpack_from('<H', self.buffer, 2)[0]
-            if size < 10:
+            flags = struct.unpack_from('<H', self.buffer, 4)[0]
+            if size < 10 or flags != 0 or self.buffer[8] != 2:
                 del self.buffer[:2]
                 self.errors += 1
                 continue
             if len(self.buffer) < 15 + size:
                 break
             frame = bytes(self.buffer[:15+size])
-            del self.buffer[:15+size]
             try:
                 event = decode(frame)
+                del self.buffer[:15+size]
                 self.frames += 1
                 if event is not None:
                     events.append(event)
             except ValueError:
+                # The length field is not protected by the payload CRC. Never
+                # discard that advertised length on failure: it may include
+                # the beginning (or entirety) of the next healthy frame.
+                del self.buffer[:2]
+                index = self.buffer.find(b'~~')
+                del self.buffer[:index if index >= 0 else max(0, len(self.buffer)-1)]
                 self.errors += 1
         return events

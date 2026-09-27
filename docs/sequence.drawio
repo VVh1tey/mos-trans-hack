@@ -26,7 +26,7 @@
             <mxPoint x="400" y="1710" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="actor2" value="Redis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#6C9BD2;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="actor2" value="Redis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#6C9BD2;fontSize=14;fontStyle=1;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="550" y="95" width="210" height="65" as="geometry" />
         </mxCell>
         <mxCell id="life2" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#B9C5D2;dashed=1;dashPattern=4 4;" edge="1" parent="1">
@@ -35,7 +35,7 @@
             <mxPoint x="655" y="1710" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="actor3" value="Worker / scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#6C9BD2;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="actor3" value="Worker / scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#6C9BD2;fontSize=14;fontStyle=1;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="805" y="95" width="210" height="65" as="geometry" />
         </mxCell>
         <mxCell id="life3" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#B9C5D2;dashed=1;dashPattern=4 4;" edge="1" parent="1">
@@ -92,7 +92,7 @@
         <mxCell id="self3" value="3. Проверить длину/CRC; unit_id → tr_id; нормализовать" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;" vertex="1" parent="1">
           <mxGeometry x="298" y="336" width="204" height="57" as="geometry" />
         </mxCell>
-        <mxCell id="label4" value="4. XADD telemetry:{shard}; event_time, packet_id, tr_id" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label4" value="4. XADD telemetry:{shard}; event_time, packet_id, tr_id" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="412" y="402" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg4" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#55718A;" edge="1" parent="1">
@@ -101,7 +101,7 @@
             <mxPoint x="655" y="436" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="label5" value="5. XREADGROUP: получить событие своего шарда" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label5" value="5. XREADGROUP: получить событие своего шарда" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="667" y="474" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg5" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#55718A;" edge="1" parent="1">
@@ -110,10 +110,10 @@
             <mxPoint x="910" y="508" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="self6" value="6. Дедупликация; окно 1/3/5 мин; обновить состояние ТС" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;" vertex="1" parent="1">
+        <mxCell id="self6" value="6. Дедупликация; окно 1/3/5 мин; обновить состояние ТС" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="808" y="552" width="204" height="57" as="geometry" />
         </mxCell>
-        <mxCell id="label7" value="7. Сохранить снимок/окна с TTL; XACK telemetry" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label7" value="7. Сохранить снимок/окна с TTL; XACK telemetry" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="667" y="618" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg7" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#397A62;dashed=1;dashPattern=4 4;" edge="1" parent="1">
@@ -122,7 +122,7 @@
             <mxPoint x="655" y="652" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="self8" value="8. Каждые 30 с: выбрать T; найти остановку в (T+10, T+15]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;" vertex="1" parent="1">
+        <mxCell id="self8" value="8. Каждые 30 с: выбрать T; найти остановку в (T+10, T+15]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="808" y="696" width="204" height="57" as="geometry" />
         </mxCell>
         <mxCell id="label9" value="9. POST /predict: фичи, T, target_stop_id, версия схемы" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
@@ -143,7 +143,7 @@
             <mxPoint x="910" y="868" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="label11" value="11. XADD predictions; обновить актуальный прогноз ТС" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label11" value="11. XADD predictions; обновить актуальный прогноз ТС" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="667" y="906" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg11" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#397A62;dashed=1;dashPattern=4 4;" edge="1" parent="1">
@@ -152,7 +152,7 @@
             <mxPoint x="655" y="940" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="label12" value="12. Прочитать событие прогноза/изменения риска" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label12" value="12. Прочитать событие прогноза/изменения риска" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="667" y="978" width="741" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg12" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#55718A;" edge="1" parent="1">
@@ -161,10 +161,10 @@
             <mxPoint x="1420" y="1012" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="self13" value="13. Дедуплицировать алерт; проверить окно 10–15 мин" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;" vertex="1" parent="1">
+        <mxCell id="self13" value="13. Дедуплицировать алерт; проверить окно 10–15 мин" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="1318" y="1056" width="204" height="57" as="geometry" />
         </mxCell>
-        <mxCell id="label14" value="14. GET /api/snapshot при открытии или переподключении" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label14" value="14. GET /api/snapshot при открытии или переподключении" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="1432" y="1122" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg14" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#397A62;dashed=1;dashPattern=4 4;" edge="1" parent="1">
@@ -173,7 +173,7 @@
             <mxPoint x="1420" y="1156" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="label15" value="15. Снимок ТС, остановок, рисков и алертов" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label15" value="15. Снимок ТС, остановок, рисков и алертов" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="1432" y="1194" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg15" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#55718A;" edge="1" parent="1">
@@ -182,7 +182,7 @@
             <mxPoint x="1675" y="1228" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="label16" value="16. GET /api/events: SSE-подписка" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label16" value="16. GET /api/events: SSE-подписка" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="1432" y="1266" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg16" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#397A62;dashed=1;dashPattern=4 4;" edge="1" parent="1">
@@ -191,7 +191,7 @@
             <mxPoint x="1420" y="1300" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="label17" value="17. SSE: позиция, прогноз, алерт, свежесть данных" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">
+        <mxCell id="label17" value="17. SSE: позиция, прогноз, алерт, свежесть данных" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="1432" y="1338" width="231" height="31" as="geometry" />
         </mxCell>
         <mxCell id="msg17" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#55718A;" edge="1" parent="1">
@@ -212,8 +212,98 @@
         <mxCell id="note0" value="T = время прогноза. Признаки используют только телеметрию с event_time ≤ T. Ответ для сабмита — задержка в секундах; риск нужен экрану." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4DE;strokeColor=#D9A441;fontSize=14;align=left;spacingLeft=12;" vertex="1" parent="1">
           <mxGeometry x="45" y="1550" width="1730" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="note1" value="При нескольких воркерах все события одного tr_id направляются одному шарду. Если Redis/ML недоступен, показываем деградацию, а не свежий прогноз." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4DE;strokeColor=#D9A441;fontSize=14;align=left;spacingLeft=12;" vertex="1" parent="1">
+        <mxCell id="note1" value="При нескольких воркерах все события одного tr_id направляются одному шарду. Если Redis/ML недоступен, показываем деградацию, а не свежий прогноз." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4DE;strokeColor=#D9A441;fontSize=14;align=left;spacingLeft=12;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
           <mxGeometry x="45" y="1630" width="1730" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="gap-actor2" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555.0" y="155.0" as="sourcePoint" />
+            <mxPoint x="755.0" y="100.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-actor3" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810.0" y="155.0" as="sourcePoint" />
+            <mxPoint x="1010.0" y="100.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label4" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="417.0" y="428.0" as="sourcePoint" />
+            <mxPoint x="638.0" y="407.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label5" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="672.0" y="500.0" as="sourcePoint" />
+            <mxPoint x="893.0" y="479.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-self6" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="813.0" y="604.0" as="sourcePoint" />
+            <mxPoint x="1007.0" y="557.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label7" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="672.0" y="644.0" as="sourcePoint" />
+            <mxPoint x="893.0" y="623.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-self8" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="813.0" y="748.0" as="sourcePoint" />
+            <mxPoint x="1007.0" y="701.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label11" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="672.0" y="932.0" as="sourcePoint" />
+            <mxPoint x="893.0" y="911.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label12" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="672.0" y="1004.0" as="sourcePoint" />
+            <mxPoint x="1403.0" y="983.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-self13" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1323.0" y="1108.0" as="sourcePoint" />
+            <mxPoint x="1517.0" y="1061.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label14" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1437.0" y="1148.0" as="sourcePoint" />
+            <mxPoint x="1658.0" y="1127.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label15" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1437.0" y="1220.0" as="sourcePoint" />
+            <mxPoint x="1658.0" y="1199.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label16" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1437.0" y="1292.0" as="sourcePoint" />
+            <mxPoint x="1658.0" y="1271.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-label17" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1437.0" y="1364.0" as="sourcePoint" />
+            <mxPoint x="1658.0" y="1343.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-note1" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50.0" y="1689.0" as="sourcePoint" />
+            <mxPoint x="1770.0" y="1635.0" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
@@ -298,7 +388,7 @@
             <mxPoint x="655" y="292" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="self3" value="3. Baseline cur_dev_s; CatBoost; PyTorch эксперимент" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;" vertex="1" parent="1">
+        <mxCell id="self3" value="3. Baseline cur_dev_s; CatBoost (PyTorch отсутствует)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E6;strokeColor=#D9A441;fontSize=13;align=left;spacingLeft=9;" vertex="1" parent="1">
           <mxGeometry x="553" y="336" width="204" height="57" as="geometry" />
         </mxCell>
         <mxCell id="label4" value="4. Run: git SHA, хеш данных, seed, параметры, MAE" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=13;fontColor=#17324D;fillColor=#FFFFFF;" vertex="1" parent="1">

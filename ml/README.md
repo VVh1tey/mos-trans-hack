@@ -1,5 +1,10 @@
 # ML
 
-`train.py` запускает модуль из `experiments/`, вычисляет MAE на test и записывает отдельную папку в `runs/`. `experiments.catboost_clean` очищает пересечения по `tr_id` и обучает CatBoost только на `cur_dev_s`. `compare.py` строит индекс запусков, `choose.py` выбирает CatBoost для онлайн-сервиса. Полный порядок действий — в [инструкции](../docs/experiment-workflow.md).
+Выбрана `experiments.catboost_robust`, run `20260927T210831784612Z-robust-final`.
+Модель и метаданные поставляются в `runs/`, активный run задаёт `runs/selection.json`.
+`service.py` загружает артефакт и обслуживает `/predict` на порту 8001 внутри Docker.
+Внешняя точка входа — backend `/api/predict`.
 
-`service.py` обслуживает `POST /predict` и загружает модель из запуска, указанного в `runs/selection.json`. Признаки для обучения и онлайн-предсказания вычисляются одним модулем эксперимента.
+[Модель, метрики, входные признаки, обучение и запуск](../README.md).
+`choose.py` выбирает совместимый run. `catboost_robust.py` содержит обучение,
+подготовку признаков и инференс; `test_robust.py` проверяет пропуски, артефакт и HTTP.

@@ -1,20 +1,15 @@
-# Контракты модулей
+# HTTP-контракты
 
-Это стартовая договорённость. Конкретные JSON схемы добавляются вместе с реализацией и проверяются между сервисами.
+Актуальные схемы: [backend/openapi.json](../backend/openapi.json).
+После запуска доступен [Swagger UI](http://localhost:18000/docs).
 
-Рабочий HTTP-контракт фронтенда, определения метрик и переход с моков на online:
-[Dashboard API v1](dashboard.md).
+- `POST /api/predict`: JSON с `sample_id` и признаками; ответ — `prediction`
+  (задержка в секундах) и `model` (run ID).
+- `GET /api/dashboard/simulation`: состояние исторического воспроизведения,
+  телеметрия и прогнозы.
+- `POST /api/dashboard/simulation`: `action` = `start`, `stop`, `reset` или `speed`;
+  скорость задаётся полем `speed` (1, 10, 60, 300, 3600).
+- `GET /api/dashboard`: каталог и демонстрационные маршрутные показатели.
 
-## Прогноз
-
-ML получает `tr_id`, момент `T`, `target_stop_id`, плановое время `target_time_begin` и признаки, вычисленные только по данным с `event_time <= T`. Возвращает числовой `prediction`: задержку в секундах, положительное число означает опоздание. Версия модели и время расчёта — метаданные backend.
-
-## Пакетная отправка
-
-Точки validate находятся в `dataset/validate/points.csv`. `submission.csv` имеет заголовок `sample_id;prediction`, одну строку на каждый `sample_id` в исходном порядке, без пропусков и лишних колонок. Проверка test использует labels; ответов validate нет.
-
-## Онлайн данные
-
-NDTP listener нормализует пакет в событие с ключом ТС и `event_time`. Redis Stream передаёт события обработчику признаков. Backend отдаёт прогноз и его актуальность через API/SSE.
-
-В текущем Compose доступен демонстрационный `POST /api/predict` с `sample_id` и `cur_dev_s`; он возвращает `cur_dev_s` плюс поправку обученного baseline. Это проверка связи сервисов, а не финальный API контракт.
+[Описание данных и ограничений](../README.md) ·
+[Пользовательский гайд](../docs/dashboard-guide.md).

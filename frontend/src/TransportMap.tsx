@@ -3,7 +3,8 @@ import * as maplibregl from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { Crosshair, Layers, MapPin, Minus, Plus, RotateCcw } from 'lucide-react';
 import type { Route, Settings, Vehicle, TelemetryVehicle } from './types';
-import { riskLabels } from './utils';
+import { delayRisk, riskLabels } from './utils';
+import { interpolatePosition, movementDuration, validCoordinate } from './telemetryMotion';
 maplibregl.setWorkerUrl(workerUrl);
 
 type Props = { routes: Route[]; settings: Settings; routeMode?: boolean; selected?: Vehicle | null; onSelect: (vehicle: Vehicle) => void; onRouteSelect?: (id: string) => void; extraStop?: [number,number] | null; replayVehicles?: TelemetryVehicle[]; replaySession?: number; replayRunning?: boolean; replaySpeed?: number; onReplaySelect?: (vehicle: TelemetryVehicle) => void };
@@ -69,7 +70,7 @@ export default function TransportMap({ routes, settings, routeMode = false, sele
         const el=document.createElement('button'); el.type='button'; el.className='vehicle-marker';
         el.style.background=settings.colors[v.risk]; el.title=`Маршрут ${v.routeNumber} · ТС ${v.id}`; el.setAttribute('aria-label',el.title);
         el.innerHTML=busIcon;
-        el.addEventListener('click',()=>{current.current.onSelect(v);});
+        el.addEventListener('click',event=>{event.stopPropagation();current.current.onSelect(v);});
         markers.push(new maplibregl.Marker({element:el}).setLngLat(v.coordinates).addTo(map));
       });
       if (routeMode && showStops && showRoutes) r.stops.forEach(s=>{
@@ -79,7 +80,7 @@ export default function TransportMap({ routes, settings, routeMode = false, sele
       });
     });
     fitRef.current=()=>{
-      const points=liveCurrent.current.vehicles?.filter(v=>v.locationValid&&!v.stale).map(v=>v.coordinates) || [];
+      const points=liveCurrent.current.vehicles?.filter(v=>v.positionExpired!==true && (v.hasPosition ?? v.locationValid) && validCoordinate(v.coordinates)).map(v=>v.coordinates) || [];
       if(!routes.length && !points.length) return;
       const bounds=new maplibregl.LngLatBounds();
       if(showRoutes || !points.length) routes.forEach(r=>r.coordinates.forEach(p=>bounds.extend(p)));
@@ -96,35 +97,38 @@ export default function TransportMap({ routes, settings, routeMode = false, sele
   },[replaySession]);
   useEffect(()=>{
     const map=mapRef.current;
-    if(!map || !ready || replayVehicles === undefined) return;
-    const vehicles=replayVehicles.filter(v=>v.positionExpired!==true && (v.hasPosition ?? v.locationValid)), ids=new Set(vehicles.map(v=>v.unitId));
-    liveMarkers.current.forEach((marker,id)=>{if(!ids.has(id)){marker.remove();liveMarkers.current.delete(id);}});
+    if(!map || !ready) return;
+    const vehicles=(replayVehicles ?? []).filter(v=>v.positionExpired!==true && (v.hasPosition ?? v.locationValid) && validCoordinate(v.coordinates)), ids=new Set(vehicles.map(v=>v.unitId));
+    liveMarkers.current.forEach((marker,id)=>{if(!ids.has(id)){marker.remove();liveMarkers.current.delete(id);lastFixTimes.current.delete(id);}});
     const moves:{marker:maplibregl.Marker; from:[number,number]; to:[number,number]; duration:number}[]=[];
     vehicles.forEach(v=>{
       let marker=liveMarkers.current.get(v.unitId);
       if(!marker){
         const el=document.createElement('button');el.type='button';el.className='vehicle-marker replay-bus';el.innerHTML=busIcon;
         el.title=`ТС №${v.vehicleId}`;el.setAttribute('aria-label',el.title);el.dataset.vehicleId=v.vehicleId;
-        el.addEventListener('click',()=>{const latest=liveCurrent.current.vehicles?.find(item=>item.unitId===v.unitId);if(latest)liveCurrent.current.onSelect?.(latest);});
+        el.addEventListener('click',event=>{event.stopPropagation();const latest=liveCurrent.current.vehicles?.find(item=>item.unitId===v.unitId);if(latest)liveCurrent.current.onSelect?.(latest);});
         marker=new maplibregl.Marker({element:el}).setLngLat(v.coordinates).addTo(map);liveMarkers.current.set(v.unitId,marker);
       }
       const element=marker.getElement();
+      const riskValue=v.prediction?.prediction ?? v.observedDelaySeconds;
+      element.style.backgroundColor=riskValue == null ? '#526174' : settings.colors[delayRisk(riskValue,settings)];
       element.classList.toggle('gps-lost',v.gpsStatus==='lost'||v.gpsStatus==='poor'||v.stale);
       element.classList.toggle('gps-suspect',v.gpsStatus==='suspect'&&!v.stale);
       element.title=`Т/С №${v.vehicleId}${v.gpsStatus==='poor'?' · GPS слабый':v.gpsStatus==='lost'?' · GPS потерян':v.gpsStatus==='suspect'?' · координата отброшена':v.stale?' · данные устарели':''}`;
       const p=marker.getLngLat();
       if(v.locationValid && v.gpsStatus!=='suspect') {
         const fixTime=v.positionEventTime ?? v.eventTime, previousFix=lastFixTimes.current.get(v.unitId);
-        const duration=previousFix===undefined || !replayRunning || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 0 : Math.min(900,Math.max(80,(fixTime-previousFix)/Math.max(1,replaySpeed)*1000));
+        if(previousFix!==undefined && fixTime<previousFix) return;
+        const duration=movementDuration(previousFix,fixTime,replaySpeed,
+          replayRunning!==false && !v.stale && !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
         if(previousFix===undefined || fixTime>previousFix) lastFixTimes.current.set(v.unitId,fixTime);
         moves.push({marker,from:[p.lng,p.lat],to:v.coordinates,duration});
       }
     });
     let frame=0;const start=performance.now();
-    const animate=(now:number)=>{let active=false;moves.forEach(({marker,from,to,duration})=>{const fraction=duration?Math.min(1,(now-start)/duration):1;marker.setLngLat([from[0]+(to[0]-from[0])*fraction,from[1]+(to[1]-from[1])*fraction]);if(fraction<1)active=true;});if(active)frame=requestAnimationFrame(animate);};
+    const animate=(now:number)=>{let active=false;moves.forEach(({marker,from,to,duration})=>{const fraction=duration?Math.min(1,(now-start)/duration):1;marker.setLngLat(interpolatePosition(from,to,fraction));if(fraction<1)active=true;});if(active)frame=requestAnimationFrame(animate);};
     frame=requestAnimationFrame(animate);return()=>cancelAnimationFrame(frame);
-  },[ready,replayVehicles,replayRunning,replaySpeed,replaySession]);
+  },[ready,replayVehicles,replayRunning,replaySpeed,replaySession,settings]);
   useEffect(()=>{
     const map=mapRef.current; if(!map || !ready || !selected) return;
     map.easeTo({center:selected.coordinates,zoom:Math.max(12,map.getZoom()),duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:450});

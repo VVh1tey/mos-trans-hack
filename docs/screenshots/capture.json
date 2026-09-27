@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-09-27T21:37:53.046Z",
+  "source": "http://127.0.0.1:18080",
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "mockedResponses": false,
+  "model": "20260927T210831784612Z-robust-final",
+  "predictionCount": 1724,
+  "currentTime": 1767675614.482231,
+  "errors": []
+}

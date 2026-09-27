@@ -1,4 +1,4 @@
-"""Temporary backend HTTP adapter. Replace with FastAPI and NDTP processing."""
+"""HTTP API for dashboard, historical NDTP replay, ML proxy and metrics."""
 
 import json
 import os

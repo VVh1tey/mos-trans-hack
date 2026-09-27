@@ -14,7 +14,7 @@ run_id = sys.argv[1]
 directory = runs / run_id
 manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
 model_file = directory / manifest["model_file"]
-if manifest["module"] not in {"experiments.catboost_clean", "experiments.catboost_timeseries"}:
+if manifest["module"] not in {"experiments.catboost_clean", "experiments.catboost_timeseries", "experiments.catboost_robust"}:
     raise SystemExit("Select a supported CatBoost experiment")
 if not model_file.is_file():
     raise SystemExit(f"Missing model: {model_file}")

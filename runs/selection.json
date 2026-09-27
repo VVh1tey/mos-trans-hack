@@ -1,0 +1,5 @@
+{
+  "run_id": "20260927T210831784612Z-robust-final",
+  "model_file": "catboost.cbm",
+  "module": "experiments.catboost_robust"
+}

@@ -1,0 +1,14 @@
+{
+  "evaluation_protocol": "real_only_leave_one_vehicle_out_with_missingness",
+  "real_rows": 1494,
+  "real_vehicles": 13,
+  "synthetic_rows": 0,
+  "baseline_mae": 84.18502097579432,
+  "scenario_mae": {
+    "full": 75.31132145519481,
+    "no_plan": 78.16248947677803,
+    "only_dev": 79.40605386924712,
+    "no_dev": 92.18806991316443,
+    "empty": 93.30222330740175
+  }
+}

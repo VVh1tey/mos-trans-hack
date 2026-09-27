@@ -2,7 +2,7 @@ param([switch]$IncludeDataset)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $root
-if (-not (Get-Command git -ErrorAction SilentlyContinue) -or -not (Get-Command docker -ErrorAction SilentlyContinue) -or -not (Get-Command tar -ErrorAction SilentlyContinue)) { throw 'git, docker and tar are required' }
+if (-not (Get-Command git -ErrorAction SilentlyContinue) -or -not (Get-Command tar -ErrorAction SilentlyContinue)) { throw 'git and tar are required' }
 if ((git status --porcelain).Length -ne 0) { throw 'Commit or stash changes before export' }
 if ($LASTEXITCODE -ne 0) { throw 'git status failed' }
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -25,15 +25,7 @@ if ($IncludeDataset) {
     if (Test-Path -LiteralPath $path) { Copy-Item -LiteralPath $path -Destination (Join-Path $bundle $item) -Recurse }
   }
 }
-$container = (docker compose ps -q postgres).Trim()
-if ($LASTEXITCODE -ne 0 -or -not $container) { throw 'Start PostgreSQL with docker compose up -d --wait postgres db-init' }
-$dump = Join-Path $bundle 'transport.dump'
-docker exec $container sh -c 'export PGPASSWORD="$POSTGRES_PASSWORD"; pg_dump -U transport -d transport -Fc -f /tmp/transport-handoff.dump'
-if ($LASTEXITCODE -ne 0) { throw 'pg_dump failed' }
-docker cp "${container}:/tmp/transport-handoff.dump" $dump
-if ($LASTEXITCODE -ne 0) { throw 'docker cp failed' }
-docker exec $container rm -f /tmp/transport-handoff.dump | Out-Null
-$manifest = @{ git_commit = (git rev-parse HEAD).Trim(); transport_dump_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant(); created_at_utc = (Get-Date).ToUniversalTime().ToString('o'); includes_dataset = [bool]$IncludeDataset }
+$manifest = @{ git_commit = (git rev-parse HEAD).Trim(); created_at_utc = (Get-Date).ToUniversalTime().ToString('o'); includes_dataset = [bool]$IncludeDataset }
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $bundle 'handoff.json') -Encoding utf8
 $archive = Join-Path $handoff "bundle-$stamp.tar.gz"
 tar -czf $archive -C $handoff "bundle-$stamp"

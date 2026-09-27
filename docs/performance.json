@@ -1,0 +1,39 @@
+{
+  "measured_at": "2026-09-27T21:43:35.975872+00:00",
+  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+  "python": "3.12.14",
+  "visible_cpus": 8,
+  "cpu": "AMD Ryzen 7 7800X3D 8-Core Processor",
+  "concurrency": 1,
+  "warmup_per_endpoint": 10,
+  "input": {
+    "cur_dev_s": 120
+  },
+  "results": {
+    "ml_http": {
+      "requests": 100,
+      "errors": 0,
+      "p50_ms": 4.640051003661938,
+      "p95_ms": 5.317486997228116,
+      "max_ms": 5.883038000320084,
+      "sequential_rps": 216.8443150220381,
+      "model": "20260927T210831784612Z-robust-final"
+    },
+    "backend_http": {
+      "requests": 100,
+      "errors": 0,
+      "p50_ms": 5.618943003355525,
+      "p95_ms": 6.288647004112136,
+      "max_ms": 6.728284002747387,
+      "sequential_rps": 178.44448315072034,
+      "model": "20260927T210831784612Z-robust-final"
+    },
+    "decoder_only": {
+      "frames": 20000,
+      "errors": 0,
+      "seconds": 0.45574239500274416,
+      "frames_per_second": 43884.440463081286
+    }
+  },
+  "limitations": "Local Docker network; sequential warm HTTP, partial features; decoder in memory without TCP/storage/map. Not a capacity or end-to-end benchmark."
+}

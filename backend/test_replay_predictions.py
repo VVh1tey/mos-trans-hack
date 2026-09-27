@@ -1,10 +1,37 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from replay import Replay, timestamp
 
 
 class StreamPredictionTests(unittest.TestCase):
+    def test_receiver_restart_reconnects_and_retries_same_packet(self):
+        replay = Replay('.', 'localhost', 9201, Mock(), '', '')
+        old, new = Mock(), Mock()
+        old.sendall.side_effect = BrokenPipeError('receiver restarted')
+        replay.sockets[1] = old
+        event = dict(unitId=1, eventTime=100, coordinates=[37.6, 55.7],
+                     locationValid=True, speedKmh=20, heading=0, altitude=100)
+        with patch('replay.socket.create_connection', return_value=new):
+            replay.send(event)
+        old.close.assert_called_once()
+        self.assertEqual(new.sendall.call_count, 2)  # handshake, then navigation
+        self.assertEqual(old.sendall.call_args, new.sendall.call_args)
+        self.assertEqual(replay.sent, 1)
+        self.assertIs(replay.sockets[1], new)
+
+    def test_failed_reconnect_is_bounded_and_does_not_count_a_send(self):
+        replay = Replay('.', 'localhost', 9201, Mock(), '', '')
+        event = dict(unitId=1, eventTime=100, coordinates=[37.6, 55.7],
+                     locationValid=True, speedKmh=20, heading=0, altitude=100)
+        with patch('replay.socket.create_connection', side_effect=ConnectionRefusedError) as connect:
+            with self.assertRaises(ConnectionRefusedError):
+                replay.send(event)
+        self.assertEqual(connect.call_count, 2)
+        self.assertEqual(replay.sent, 0)
+        self.assertEqual(replay.sockets, {})
+
     def test_forecasts_eligible_stop_on_new_packets_with_cadence(self):
         requests = []
 

@@ -1,99 +1,142 @@
+<?xml version='1.0' encoding='utf-8'?>
 <mxfile host="65bd71144e">
-    <diagram id="online-architecture" name="Онлайн · микросервисная архитектура">
-        <mxGraphModel dx="1938" dy="3188" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1850" pageHeight="900" math="0" shadow="0">
-            <root>
-                <mxCell id="0"/>
-                <mxCell id="1" parent="0"/>
-                <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FFFFFF;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Онлайн · микросервисная архитектура" vertex="1">
-                    <mxGeometry height="55" width="1700" x="50" y="30" as="geometry"/>
-                </mxCell>
-                <mxCell id="ndtp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="NDTP эмулятор / поток" vertex="1">
-                    <mxGeometry height="95" width="210" x="50" y="155" as="geometry"/>
-                </mxCell>
-                <mxCell id="ingest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Backend · TCP ingest" vertex="1">
-                    <mxGeometry height="95" width="205" x="315" y="155" as="geometry"/>
-                </mxCell>
-                <mxCell id="redis" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3D9;strokeColor=#D9A441;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Redis Streams + state" vertex="1">
-                    <mxGeometry height="95" width="205" x="575" y="155" as="geometry"/>
-                </mxCell>
-                <mxCell id="worker" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Feature worker + scheduler" vertex="1">
-                    <mxGeometry height="95" width="205" x="835" y="155" as="geometry"/>
-                </mxCell>
-                <mxCell id="inference" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="ML inference service" vertex="1">
-                    <mxGeometry height="95" width="205" x="1095" y="155" as="geometry"/>
-                </mxCell>
-                <mxCell id="api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Backend · REST + SSE" vertex="1">
-                    <mxGeometry height="95" width="205" x="955" y="385" as="geometry"/>
-                </mxCell>
-                <mxCell id="front" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="React · Mantine · MapLibre" vertex="1">
-                    <mxGeometry height="95" width="205" x="1250" y="385" as="geometry"/>
-                </mxCell>
-                <mxCell id="archive" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="CSV / Parquet archive" vertex="1">
-                    <mxGeometry height="95" width="205" x="575" y="650" as="geometry"/>
-                </mxCell>
-                <mxCell id="postgres" parent="1" style="shape=cylinder3;size=12;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="PostgreSQL" vertex="1">
-                    <mxGeometry height="95" width="205" x="835" y="650" as="geometry"/>
-                </mxCell>
-                <mxCell id="registry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="runs/selected.json" vertex="1">
-                    <mxGeometry height="95" width="205" x="1090" y="-140" as="geometry"/>
-                </mxCell>
-                <mxCell id="prometheus" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEDE3;strokeColor=#D88759;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Prometheus" vertex="1">
-                    <mxGeometry height="95" width="205" x="1500" y="290" as="geometry"/>
-                </mxCell>
-                <mxCell id="grafana" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEDE3;strokeColor=#D88759;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Grafana" vertex="1">
-                    <mxGeometry height="95" width="205" x="1670" y="155" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge1" edge="1" parent="1" source="ndtp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="ingest">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge2" edge="1" parent="1" source="ingest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="redis">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge3" edge="1" parent="1" source="redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="worker">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge4" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="inference">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge5" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="api">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge6" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="front">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge7" edge="1" parent="1" source="redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="archive">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge8" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="postgres">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge9" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="postgres">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge10" edge="1" parent="1" source="registry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;dashed=1;dashPattern=5 5;" target="inference">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge11" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;dashed=1;dashPattern=5 5;" target="prometheus">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge12" edge="1" parent="1" source="inference" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;dashed=1;dashPattern=5 5;" target="prometheus">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge13" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;dashed=1;dashPattern=5 5;" target="prometheus">
-                    <mxGeometry relative="1" as="geometry">
-                        <Array as="points">
-                            <mxPoint x="937.6" y="530"/>
-                            <mxPoint x="1502.6" y="530"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="edge14" edge="1" parent="1" source="prometheus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="grafana">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="edge15" edge="1" parent="1" source="postgres" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="grafana">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-            </root>
-        </mxGraphModel>
-    </diagram>
+  <diagram id="online-architecture" name="Онлайн · микросервисная архитектура">
+    <mxGraphModel dx="1938" dy="3188" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1850" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FFFFFF;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Онлайн · микросервисная архитектура" vertex="1">
+          <mxGeometry height="55" width="1700" x="50" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ndtp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="NDTP эмулятор / поток" vertex="1">
+          <mxGeometry height="95" width="210" x="50" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="ingest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Backend · TCP ingest" vertex="1">
+          <mxGeometry height="95" width="205" x="315" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3D9;strokeColor=#D9A441;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;;fontColor=#c62828;strokeColor=#c62828;" value="Redis Streams + state" vertex="1">
+          <mxGeometry height="95" width="205" x="575" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="worker" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;;fontColor=#c62828;strokeColor=#c62828;" value="Feature worker + scheduler" vertex="1">
+          <mxGeometry height="95" width="205" x="835" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="inference" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#6DB694;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="ML inference service" vertex="1">
+          <mxGeometry height="95" width="205" x="1095" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Backend · REST (SSE отсутствует)" vertex="1">
+          <mxGeometry height="95" width="205" x="955" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="front" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F2FF;strokeColor=#6C9BD2;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="React · MapLibre (Mantine отсутствует)" vertex="1">
+          <mxGeometry height="95" width="205" x="1250" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="archive" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;;fontColor=#c62828;strokeColor=#c62828;" value="CSV / Parquet archive" vertex="1">
+          <mxGeometry height="95" width="205" x="575" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="postgres" parent="1" style="shape=cylinder3;size=12;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;;fontColor=#c62828;strokeColor=#c62828;" value="PostgreSQL" vertex="1">
+          <mxGeometry height="95" width="205" x="835" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="registry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4ECFA;strokeColor=#A77BC4;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="runs/selection.json" vertex="1">
+          <mxGeometry height="95" width="205" x="1090" y="-140" as="geometry" />
+        </mxCell>
+        <mxCell id="prometheus" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEDE3;strokeColor=#D88759;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Prometheus" vertex="1">
+          <mxGeometry height="95" width="205" x="1500" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="grafana" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEDE3;strokeColor=#D88759;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" value="Grafana" vertex="1">
+          <mxGeometry height="95" width="205" x="1670" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" edge="1" parent="1" source="ndtp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="ingest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" edge="1" parent="1" source="ingest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" edge="1" parent="1" source="redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="worker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="inference">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="front">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" edge="1" parent="1" source="redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;" target="archive">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="postgres">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="postgres">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" edge="1" parent="1" source="registry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;dashed=1;dashPattern=5 5;" target="inference">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge11" edge="1" parent="1" source="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;dashed=1;dashPattern=5 5;" target="prometheus">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge12" edge="1" parent="1" source="inference" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;dashed=1;dashPattern=5 5;" target="prometheus">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge13" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;dashed=1;dashPattern=5 5;" target="prometheus">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="937.6" y="530" />
+              <mxPoint x="1502.6" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge14" edge="1" parent="1" source="prometheus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="grafana">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge15" edge="1" parent="1" source="postgres" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#58728C;endArrow=block;endFill=1;startArrow=block;startFill=1;" target="grafana">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="gap-redis" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="580.0" y="245.0" as="sourcePoint" />
+            <mxPoint x="775.0" y="160.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-worker" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="840.0" y="245.0" as="sourcePoint" />
+            <mxPoint x="1035.0" y="160.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-archive" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="580.0" y="740.0" as="sourcePoint" />
+            <mxPoint x="775.0" y="655.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-postgres" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="840.0" y="740.0" as="sourcePoint" />
+            <mxPoint x="1035.0" y="655.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-note-sse" value="SSE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3f3;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
+          <mxGeometry x="955" y="500" width="205" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="gap-gap-note-sse" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="960.0" y="533.0" as="sourcePoint" />
+            <mxPoint x="1155.0" y="505.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gap-note-mantine" value="Mantine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3f3;;fontColor=#c62828;strokeColor=#c62828;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="500" width="205" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="gap-gap-note-mantine" value="" style="endArrow=none;startArrow=none;strokeColor=#c62828;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1255.0" y="533.0" as="sourcePoint" />
+            <mxPoint x="1450.0" y="505.0" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
 </mxfile>
