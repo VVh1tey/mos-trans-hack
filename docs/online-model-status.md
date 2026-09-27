@@ -3,7 +3,7 @@
 ## What is connected
 
 - The historical replay sends the test telemetry through the same NDTP decoder and ingest receiver used by the emulator.
-- At labeled points in the replay timeline, the backend calls the selected CatBoost model through `ML_URL /predict`. Future labels are exposed only to the evaluator after their reveal time.
+- During historical replay, each new packet can trigger a CatBoost call when that vehicle has a planned stop strictly more than 10 and at most 15 minutes ahead. The same vehicle/stop is refreshed at most once every 120 virtual seconds. The feature is the latest delay already observed by event time, or zero before the first observed arrival. Separate labeled points are also predicted for MAE evaluation; future labels are exposed only after their reveal time. The MAE card uses only those labeled points, not the additional stream forecasts.
 - `runs/selection.json` selects the CatBoost artifact loaded by the ML service. Keep the selected run directory and its manifest alongside that pointer when moving the repository.
 - Live replay predictions are visible in the replay panel, and the reported MAE is calculated only for labels whose actual arrival has occurred in virtual replay time.
 - What-if currently uses a transparent illustrative headway formula. It is not served by the CatBoost delay model: the targets and features are different.

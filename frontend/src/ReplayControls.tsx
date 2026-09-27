@@ -46,6 +46,7 @@ export function ReplayControls({simulation}: {simulation: ReturnType<typeof useS
         <button disabled={busy || !state?.available || !state.started} onClick={() => void control('reset')}><RotateCcw size={16}/>С начала</button>
       </div></div>
     <div className="replay-timeline"><span>{error ? 'Нет связи с сервером' : label}</span><strong>{state?.available ? replayTime(state.currentTime, true) : '—'} МСК</strong><progress aria-label="Прогресс воспроизведения" max={1} value={state?.progress || 0}/><span>{Math.round((state?.progress || 0)*100)}%</span></div>
+    {state?.available && !state.predictionCount && <p className="replay-note">Прогноз появляется только при поступлении пакета для ТС с остановкой через 10–15 минут.{state.firstEligibleAt && state.currentTime < state.firstEligibleAt ? ` Первое такое окно в test — ${replayTime(state.firstEligibleAt)} МСК.` : ''}</p>}
     {(error || state?.errors.length) ? <div className="replay-error" role="alert"><span>{error || state?.errors.join(' ')}</span><button onClick={retry}>Повторить</button></div> : null}
   </section>;
 }
@@ -56,18 +57,21 @@ export function ReplayMetrics({state}: {state: SimulationStatus | null}) {
     {name:'ТС на карте', value:count, Icon:BusFront},
     {name:'Обработано записей', value:(state?.sentRows || 0).toLocaleString('ru-RU'), Icon:Gauge},
     {name:'Прогнозов модели', value:state?.predictionCount || 0, Icon:Target},
-    {name:'Ошибка MAE, сек', value:state?.maeSeconds == null ? '—' : state.maeSeconds.toFixed(1), Icon:Gauge},
+    {name:'MAE на размеченных, сек', value:state?.maeSeconds == null ? '—' : state.maeSeconds.toFixed(1), Icon:Gauge},
     {name:'Прибытий по плану', value:(state?.scheduleReached || 0).toLocaleString('ru-RU'), Icon:Clock3},
   ];
   return <div className="metrics replay-metrics">{metrics.map(({name,value,Icon}) => <div className="metric" key={name}><span className="metric-icon"><Icon size={26}/></span><div><span className="metric-label">{name}</span><div className="metric-value">{value}</div></div></div>)}</div>;
 }
 
-export function ReplayDetails({state, selected}: {state: SimulationStatus | null; selected: TelemetryVehicle | null}) {
-  return <section className="panel replay-details"><div className="section-heading"><h2>{selected ? `ТС №${selected.vehicleId}` : 'Проверка модели'}</h2></div>
-    {selected && <div className="replay-vehicle-details"><dl><div><dt>Скорость</dt><dd>{selected.speedKmh} км/ч</dd></div><div><dt>Последний пакет</dt><dd>{replayTime(selected.eventTime)}</dd></div><div><dt>Следующая остановка</dt><dd>{selected.nextStop?.name || (selected.scheduleCount ? 'Расписание завершено' : 'Нет расписания для этого ТС')}</dd></div>{selected.nextStop && <div><dt>Прибытие по плану</dt><dd>{replayTime(selected.nextStop.plannedAt, true)}</dd></div>}{selected.observedDelaySeconds != null && <div><dt>Последнее отклонение</dt><dd>{Math.round(selected.observedDelaySeconds)} сек</dd></div>}</dl></div>}
-    <div className="replay-evaluation"><p>{state?.evaluatedCount ? `Сравнено с фактом: ${state.evaluatedCount} прогнозов.` : 'Ошибка появится после фактического прибытия ТС.'}</p>
-      {!state?.predictionCount && <p>Первый прогноз в test — в 02:05 МСК. Ускорьте воспроизведение, чтобы перейти к нему быстрее.</p>}
-      {(state?.predictions || []).slice(0,5).map(p => <div className="replay-prediction" key={p.sampleId}><strong>ТС №{p.vehicleId}<span>{replayTime(p.at)}</span></strong><div>Прогноз: {Math.round(p.prediction)} сек</div><div>{p.actual == null ? 'Ожидаем фактическое прибытие' : `Факт: ${Math.round(p.actual)} сек · ошибка: ${Math.round(p.absoluteError!)} сек`}</div></div>)}
-      <p className="replay-note">Прогноз строится без будущих данных. MAE — средняя абсолютная ошибка в секундах.</p>
+export function ReplayDetails({state, selected, onClear}: {state: SimulationStatus | null; selected: TelemetryVehicle | null; onClear: () => void}) {
+  if (!selected) return <section className="panel replay-details replay-details-empty" aria-label="Данные транспортного средства"/>;
+  const recent=(state?.predictions||[]).filter(p=>p.vehicleId===selected.vehicleId&&p.at<=selected.eventTime);
+  const predictions=(recent.length ? recent : selected.prediction ? [selected.prediction] : []).slice(0,5);
+  const evaluated=predictions.filter(p=>p.actual!=null).length;
+  return <section className="panel replay-details"><div className="section-heading"><h2>ТС №{selected.vehicleId}</h2><button type="button" className="text-button" onClick={onClear}>Снять выбор</button></div>
+    <div className="replay-vehicle-details"><dl><div><dt>Скорость</dt><dd>{selected.speedKmh} км/ч</dd></div><div><dt>Последний пакет</dt><dd>{replayTime(selected.eventTime)}</dd></div><div><dt>Следующая остановка</dt><dd>{selected.nextStop?.name || (selected.scheduleCount ? 'Расписание завершено' : 'Нет расписания для этого ТС')}</dd></div>{selected.nextStop && <div><dt>Прибытие по плану</dt><dd>{replayTime(selected.nextStop.plannedAt, true)}</dd></div>}{selected.observedDelaySeconds != null && <div><dt>Последнее отклонение</dt><dd>{Math.round(selected.observedDelaySeconds)} сек</dd></div>}</dl></div>
+    <div className="replay-evaluation"><p>{evaluated ? `Сравнено с фактом: ${evaluated} прогнозов этого ТС.` : 'Фактическое прибытие для прогнозов этого ТС ещё ожидается.'}</p>
+      {predictions.length ? predictions.map(p => <div className="replay-prediction" key={p.sampleId}><strong>ТС №{p.vehicleId}<span>{replayTime(p.at)}</span></strong><div>{p.source==='stream'?'По потоку':'Контрольная точка'} · остановка по плану {replayTime(p.targetAt)}</div><div>Прогноз: {Math.round(p.prediction)} сек</div><div>{p.actual == null ? 'Ожидаем фактическое прибытие' : `Факт: ${Math.round(p.actual)} сек · ошибка: ${Math.round(p.absoluteError!)} сек`}</div></div>) : <p>Для выбранного ТС пока нет остановки в окне 10–15 минут или ещё не поступил подходящий пакет.</p>}
+      {predictions.length>0&&<p className="replay-note">Прогнозы только для этого ТС. Общий MAE считается по размеченным контрольным точкам.</p>}
     </div></section>;
 }

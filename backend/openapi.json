@@ -1,0 +1,753 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Предиктор городского транспорта · Backend API",
+    "version": "1.0.0",
+    "description": "Фактические маршруты HTTP backend. Историческое воспроизведение вызывает выбранную модель; основной каталог маршрутов содержит демонстрационные данные."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:18000",
+      "description": "Docker Compose"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System"
+    },
+    {
+      "name": "Replay"
+    },
+    {
+      "name": "Dashboard"
+    },
+    {
+      "name": "ML"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Проверка backend",
+        "responses": {
+          "200": {
+            "description": "Сервис доступен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "service": {
+                      "type": "string"
+                    },
+                    "mode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Метрики Prometheus",
+        "responses": {
+          "200": {
+            "description": "Текстовые метрики",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/predict": {
+      "post": {
+        "tags": [
+          "ML"
+        ],
+        "summary": "Прогноз задержки в секундах через ML-сервис",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictRequest"
+              },
+              "example": {
+                "sample_id": "demo",
+                "cur_dev_s": 42
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Прогноз",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/predictions": {
+      "get": {
+        "tags": [
+          "Replay"
+        ],
+        "summary": "Прогнозы текущего воспроизведения",
+        "responses": {
+          "200": {
+            "description": "Список прогнозов и состояние",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Predictions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/simulation": {
+      "get": {
+        "tags": [
+          "Replay"
+        ],
+        "summary": "Состояние исторического воспроизведения и приёмника",
+        "responses": {
+          "200": {
+            "description": "Снимок воспроизведения",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Replay"
+        ],
+        "summary": "Управление историческим воспроизведением",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "start",
+                      "stop",
+                      "reset",
+                      "speed"
+                    ]
+                  },
+                  "speed": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      10,
+                      60,
+                      300,
+                      3600
+                    ]
+                  }
+                },
+                "example": {
+                  "action": "start"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Новое состояние",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SimulationStatus"
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "503": {
+              "$ref": "#/components/responses/Unavailable"
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Снимок сети",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Direction"
+          },
+          {
+            "$ref": "#/components/parameters/Period"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Сеть, маршруты, инциденты и история",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/api/dashboard/routes/{routeId}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Снимок маршрута",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RouteId"
+          },
+          {
+            "$ref": "#/components/parameters/Direction"
+          },
+          {
+            "$ref": "#/components/parameters/Period"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Маршрут и связанные данные",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/dashboard/settings": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Пороги риска и цвета",
+        "responses": {
+          "200": {
+            "description": "Текущие настройки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Обновить настройки в памяти backend",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Сохранённые настройки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/api/dashboard/routes/{routeId}/scenario": {
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Демонстрационный What-if расчёт",
+        "description": "Формула сценария не является обученной ML-моделью.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RouteId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Демонстрационный сценарий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "RouteId": {
+        "name": "routeId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Direction": {
+        "name": "direction",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ],
+          "default": 0
+        }
+      },
+      "Period": {
+        "name": "period",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "enum": [
+            30,
+            60,
+            180
+          ],
+          "default": 60
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Ошибка параметров",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Маршрут не найден",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Зависимый сервис недоступен",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PredictRequest": {
+        "type": "object",
+        "required": [
+          "sample_id",
+          "cur_dev_s"
+        ],
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          },
+          "cur_dev_s": {
+            "type": "number",
+            "description": "Текущее отклонение от расписания, секунды"
+          }
+        },
+        "additionalProperties": true
+      },
+      "PredictResponse": {
+        "type": "object",
+        "required": [
+          "sample_id",
+          "prediction",
+          "model"
+        ],
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          },
+          "prediction": {
+            "type": "number",
+            "description": "Прогноз задержки, секунды"
+          },
+          "model": {
+            "type": "string",
+            "description": "ID выбранного запуска"
+          }
+        }
+      },
+      "Predictions": {
+        "type": "object",
+        "properties": {
+          "predictions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplayPrediction"
+            }
+          },
+          "predictionCount": {
+            "type": "integer"
+          },
+          "predictionTotal": {
+            "type": "integer"
+          },
+          "currentTime": {
+            "type": "number",
+            "nullable": true
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ReplayPrediction": {
+        "type": "object",
+        "properties": {
+          "sampleId": {
+            "type": "string"
+          },
+          "vehicleId": {
+            "type": "string"
+          },
+          "at": {
+            "type": "number"
+          },
+          "targetAt": {
+            "type": "number"
+          },
+          "prediction": {
+            "type": "number"
+          },
+          "model": {
+            "type": "string"
+          },
+          "actual": {
+            "type": "number",
+            "nullable": true
+          },
+          "absoluteError": {
+            "type": "number",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "stream",
+              "labeled"
+            ]
+          }
+        }
+      },
+      "SimulationStatus": {
+        "type": "object",
+        "description": "Текущий снимок replay. При отсутствии датасета available=false; остальные поля могут отсутствовать.",
+        "required": [
+          "source",
+          "available",
+          "errors"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "running": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "speed": {
+            "type": "integer"
+          },
+          "currentTime": {
+            "type": "number",
+            "description": "Время воспроизведения, Unix seconds"
+          },
+          "predictionCount": {
+            "type": "integer"
+          },
+          "evaluatedCount": {
+            "type": "integer"
+          },
+          "maeSeconds": {
+            "type": "number",
+            "nullable": true
+          },
+          "predictions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplayPrediction"
+            }
+          },
+          "ingestAvailable": {
+            "type": "boolean"
+          },
+          "telemetry": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "firstEligibleAt": {
+            "type": "number",
+            "nullable": true
+          },
+          "streamPredictionCount": {
+            "type": "integer"
+          },
+          "labeledPredictionCount": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Settings": {
+        "type": "object",
+        "required": [
+          "mediumDelaySeconds",
+          "highDelaySeconds",
+          "staleAfterSeconds",
+          "colors"
+        ],
+        "properties": {
+          "mediumDelaySeconds": {
+            "type": "integer"
+          },
+          "highDelaySeconds": {
+            "type": "integer"
+          },
+          "staleAfterSeconds": {
+            "type": "integer"
+          },
+          "colors": {
+            "type": "object",
+            "properties": {
+              "low": {
+                "type": "string"
+              },
+              "medium": {
+                "type": "string"
+              },
+              "high": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Snapshot": {
+        "type": "object",
+        "description": "Демонстрационный провайдер; подробные поля описаны в contracts/dashboard.md.",
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "generatedAt": {
+            "type": "string"
+          },
+          "servedAt": {
+            "type": "string"
+          },
+          "notice": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/Settings"
+          },
+          "summary": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "incidents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "historyEvents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "ScenarioRequest": {
+        "type": "object",
+        "required": [
+          "extraVehicles",
+          "horizonMinutes",
+          "direction",
+          "startStopId",
+          "startTime"
+        ],
+        "properties": {
+          "extraVehicles": {
+            "type": "integer"
+          },
+          "horizonMinutes": {
+            "type": "integer"
+          },
+          "direction": {
+            "type": "integer"
+          },
+          "startStopId": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

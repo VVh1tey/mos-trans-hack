@@ -1,0 +1,41 @@
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title"><a href="experiments.html" class="white">experiments</a>.catboost_context</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/repo/ml/experiments/catboost_context.py">/repo/ml/experiments/catboost_context.py</a></td></tr></table>
+    <p><span class="code">Plan-only&nbsp;context,&nbsp;MAE&nbsp;residual&nbsp;learning;&nbsp;CLI&nbsp;also&nbsp;writes&nbsp;a&nbsp;submission.</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="csv.html">csv</a><br>
+<a href="hashlib.html">hashlib</a><br>
+</td><td class="multicolumn"><a href="json.html">json</a><br>
+<a href="numpy.html">numpy</a><br>
+</td><td class="multicolumn"><a href="os.html">os</a><br>
+<a href="pandas.html">pandas</a><br>
+</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-distance"><strong>distance</strong></a>(lon1, lat1, lon2, lat2)</dt></dl>
+ <dl><dt><a name="-features"><strong>features</strong></a>(rows, root, split, telemetry=False)</dt></dl>
+ <dl><dt><a name="-fit"><strong>fit</strong></a>(rows, dataset_root)</dt></dl>
+ <dl><dt><a name="-fit_impl"><strong>fit_impl</strong></a>(rows, root, telemetry=False)</dt></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>(telemetry=False)</dt><dd><span class="code">Train,&nbsp;evaluate&nbsp;on&nbsp;original&nbsp;test,&nbsp;save&nbsp;model&nbsp;and&nbsp;ready-to-upload&nbsp;CSV.</span></dd></dl>
+ <dl><dt><a name="-predict"><strong>predict</strong></a>(model, rows, dataset_root, split)</dt></dl>
+ <dl><dt><a name="-predict_impl"><strong>predict_impl</strong></a>(model, rows, root, split, telemetry=False)</dt></dl>
+ <dl><dt><a name="-read_rows"><strong>read_rows</strong></a>(path)</dt></dl>
+ <dl><dt><a name="-save_model"><strong>save_model</strong></a>(model, directory)</dt></dl>
+ <dl><dt><a name="-seconds"><strong>seconds</strong></a>(values)</dt></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>FEATURE_SET</strong> = 'v1: cur_dev residual + clock + planned stop geometry; vehicle-disjoint'</td></tr></table>

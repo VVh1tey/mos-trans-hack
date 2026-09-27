@@ -1,0 +1,38 @@
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title"><a href="experiments.html" class="white">experiments</a>.catboost_timeseries</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/repo/ml/experiments/catboost_timeseries.py">/repo/ml/experiments/catboost_timeseries.py</a></td></tr></table>
+    <p><span class="code">CatBoost&nbsp;on&nbsp;both&nbsp;labeled&nbsp;files,&nbsp;with&nbsp;temporal&nbsp;evaluation&nbsp;and&nbsp;repeat&nbsp;removal.</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="csv.html">csv</a><br>
+<a href="json.html">json</a><br>
+</td><td class="multicolumn"><a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td class="multicolumn"><a href="sys.html">sys</a><br>
+</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-compare_first"><strong>compare_first</strong></a>(dataset_root, runs_root, run_id)</dt></dl>
+ <dl><dt><a name="-load_model"><strong>load_model</strong></a>(path)</dt></dl>
+ <dl><dt><a name="-make_submission"><strong>make_submission</strong></a>(dataset_root, runs_root, output_path, run_id=None)</dt></dl>
+ <dl><dt><a name="-predict"><strong>predict</strong></a>(model, rows, dataset_root, split)</dt></dl>
+ <dl><dt><a name="-predict_one"><strong>predict_one</strong></a>(model, point)</dt></dl>
+ <dl><dt><a name="-run"><strong>run</strong></a>(train_rows, test_rows, dataset_root)</dt></dl>
+ <dl><dt><a name="-save_model"><strong>save_model</strong></a>(model, directory)</dt></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>EMBARGO</strong> = datetime.timedelta(seconds=900)<br>
+<strong>FEATURE_SET</strong> = 'cur_dev_s; adjacent repeats removed; chronological folds'</td></tr></table>

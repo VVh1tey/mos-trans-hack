@@ -1,6 +1,7 @@
 """TCP NDTP receiver with a bounded latest-position snapshot and metrics."""
 import json
 import os
+import resource
 import socketserver
 import threading
 import time
@@ -14,6 +15,15 @@ stats = {'bytesReceived': 0, 'framesReceived': 0, 'packetsReceived': 0, 'duplica
          'connections': 0, 'lastReceivedAt': None}
 GPS_MAX_SPEED_KMH = float(os.getenv('GPS_MAX_SPEED_KMH', '160'))
 GPS_RETAIN_SECONDS = int(os.getenv('GPS_RETAIN_SECONDS', '120'))
+
+
+def resident_memory_bytes():
+    try:
+        with open('/proc/self/statm', encoding='ascii') as statm:
+            resident_pages = int(statm.read().split()[1])
+        return resident_pages * os.sysconf('SC_PAGE_SIZE')
+    except (OSError, ValueError, IndexError):
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
 
 
 def accept_event(old, event, received_at):
@@ -136,7 +146,12 @@ class Handler(BaseHTTPRequestHandler):
                      'packetsReceived': 'ndtp_packets_received_total', 'duplicates': 'ndtp_duplicates_total',
                      'latePackets': 'ndtp_late_packets_total', 'invalidFixes': 'ndtp_invalid_gps_fixes_total',
                      'suspectFixes': 'ndtp_suspect_gps_fixes_total', 'errors': 'ndtp_errors_total', 'connections': 'ndtp_connections'}
-            body = ''.join(f'# TYPE {name} {"gauge" if key == "connections" else "counter"}\n{name} {state[key]}\n' for key, name in names.items()).encode()
+            text = '# HELP process_cpu_seconds_total Total user and system CPU time spent in process.\n# TYPE process_cpu_seconds_total counter\n'
+            text += f'process_cpu_seconds_total {time.process_time()}\n'
+            text += '# HELP process_resident_memory_bytes Resident memory size in bytes.\n# TYPE process_resident_memory_bytes gauge\n'
+            text += f'process_resident_memory_bytes {resident_memory_bytes()}\n'
+            text += ''.join(f'# TYPE {name} {"gauge" if key == "connections" else "counter"}\n{name} {state[key]}\n' for key, name in names.items())
+            body = text.encode()
             content = 'text/plain; version=0.0.4'
         else:
             self.send_error(404)

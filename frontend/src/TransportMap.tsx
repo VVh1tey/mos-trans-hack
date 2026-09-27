@@ -69,7 +69,7 @@ export default function TransportMap({ routes, settings, routeMode = false, sele
         const el=document.createElement('button'); el.type='button'; el.className='vehicle-marker';
         el.style.background=settings.colors[v.risk]; el.title=`Маршрут ${v.routeNumber} · ТС ${v.id}`; el.setAttribute('aria-label',el.title);
         el.innerHTML=busIcon;
-        el.addEventListener('click',()=>current.current.onSelect(v));
+        el.addEventListener('click',()=>{current.current.onSelect(v);});
         markers.push(new maplibregl.Marker({element:el}).setLngLat(v.coordinates).addTo(map));
       });
       if (routeMode && showStops && showRoutes) r.stops.forEach(s=>{

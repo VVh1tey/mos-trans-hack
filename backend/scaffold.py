@@ -1,8 +1,10 @@
 """Online process placeholders with health and Prometheus endpoints."""
 
 import os
+import resource
 import socketserver
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
@@ -12,6 +14,15 @@ bytes_received = 0
 counter_lock = threading.Lock()
 
 
+def resident_memory_bytes():
+    try:
+        with open('/proc/self/statm', encoding='ascii') as statm:
+            resident_pages = int(statm.read().split()[1])
+        return resident_pages * os.sysconf('SC_PAGE_SIZE')
+    except (OSError, ValueError, IndexError):
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
@@ -19,6 +30,10 @@ class Handler(BaseHTTPRequestHandler):
             content_type = "application/json"
         elif self.path == "/metrics":
             body = f'# HELP scaffold_ready Service process is running.\n# TYPE scaffold_ready gauge\nscaffold_ready{{service="{ROLE}"}} 1\n'
+            body += '# HELP process_cpu_seconds_total Total user and system CPU time spent in process.\n# TYPE process_cpu_seconds_total counter\n'
+            body += f'process_cpu_seconds_total {time.process_time()}\n'
+            body += '# HELP process_resident_memory_bytes Resident memory size in bytes.\n# TYPE process_resident_memory_bytes gauge\n'
+            body += f'process_resident_memory_bytes {resident_memory_bytes()}\n'
             if ROLE == "ingest":
                 with counter_lock:
                     total = bytes_received

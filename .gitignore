@@ -59,6 +59,8 @@ frontend/coverage/
 frontend/test-results/
 frontend/playwright-report/
 .impeccable/review/
+/.impeccable/
+/frontend/references/
 *.tsbuildinfo
 
 # Local tools

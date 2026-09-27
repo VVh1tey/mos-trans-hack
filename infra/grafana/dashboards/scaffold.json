@@ -1,41 +1,21 @@
 {
-  "title": "Transport — service health",
+  "title": "Transport — Operations",
   "uid": "transport-health",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
+  "time": {"from": "now-1h", "to": "now"},
   "panels": [
-    {
-      "id": 1,
-      "title": "Online services",
-      "type": "stat",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "up{job=~\"backend|ml|ingest|feature-worker|scheduler|archive-worker\"}", "refId": "A"}],
-      "fieldConfig": {"defaults": {"min": 0, "max": 1, "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}]}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "auto", "textMode": "auto"}
-    },
-    {
-      "id": 2,
-      "title": "Recent predictions (empty until backend persists results)",
-      "type": "table",
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8},
-      "datasource": {"type": "postgres", "uid": "transport-db"},
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawQuery": true,
-        "rawSql": "SELECT predicted_at AS time, tr_id, target_stop_id, prediction_seconds, model_name FROM predictions WHERE $__timeFilter(predicted_at) ORDER BY predicted_at DESC LIMIT 50"
-      }]
-    },
-    {
-      "id": 3,
-      "title": "Raw NDTP TCP bytes (parsing pending)",
-      "type": "stat",
-      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 18},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "ndtp_bytes_received_total", "refId": "A"}],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "auto", "textMode": "auto"}
-    }
+    {"id": 1, "title": "Сервисы онлайн", "type": "stat", "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "up{job=~\"backend|ml|ingest|feature-worker|scheduler|archive-worker|cadvisor\"}", "legendFormat": "{{job}}", "refId": "A"}], "fieldConfig": {"defaults": {"min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}]}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "horizontal", "textMode": "value_and_name", "colorMode": "background", "graphMode": "none"}},
+    {"id": 2, "title": "CPU процесса (ядра)", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "rate(process_cpu_seconds_total{job=~\"backend|ml\"}[1m])", "legendFormat": "{{job}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "cores", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}},
+    {"id": 3, "title": "Память процессов (RSS)", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "process_resident_memory_bytes{job=~\"backend|ml|ingest|feature-worker|scheduler|archive-worker\"}", "legendFormat": "{{job}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "bytes", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}},
+    {"id": 4, "title": "HTTP запросы (с запуска процесса)", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (job, route) (http_requests_total{job=~\"backend|ml\"})", "legendFormat": "{{job}} {{route}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi"}}},
+    {"id": 5, "title": "Ошибки HTTP (с запуска процесса)", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (job, route, status) (http_requests_total{job=~\"backend|ml\",status=~\"4..|5..\"}) or vector(0)", "legendFormat": "{{job}} {{status}} {{route}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "min": 0, "color": {"mode": "continuous-RdYlGr"}}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi"}}},
+    {"id": 6, "title": "HTTP latency p50 / p95 / p99 (за время жизни процесса)", "type": "timeseries", "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "histogram_quantile(0.50, sum by (le, job, route) (http_request_duration_seconds_bucket{job=~\"backend|ml\"}))", "legendFormat": "p50 {{job}} {{route}}", "refId": "A"}, {"expr": "histogram_quantile(0.95, sum by (le, job, route) (http_request_duration_seconds_bucket{job=~\"backend|ml\"}))", "legendFormat": "p95 {{job}} {{route}}", "refId": "B"}, {"expr": "histogram_quantile(0.99, sum by (le, job, route) (http_request_duration_seconds_bucket{job=~\"backend|ml\"}))", "legendFormat": "p99 {{job}} {{route}}", "refId": "C"}], "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"]}, "tooltip": {"mode": "multi"}}},
+    {"id": 7, "title": "ML: вызовы backend → модель (с запуска процесса)", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (model) (ml_client_requests_total)", "legendFormat": "{{model}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}},
+    {"id": 8, "title": "ML: средняя задержка вызова / инференса", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (model) (ml_client_request_duration_seconds_sum) / sum by (model) (ml_client_request_duration_seconds_count)", "legendFormat": "{{model}} backend → ML", "refId": "A"}, {"expr": "sum by (model) (ml_inference_duration_seconds_sum) / sum by (model) (ml_inference_duration_seconds_count)", "legendFormat": "{{model}} inference", "refId": "B"}], "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}},
+    {"id": 9, "title": "NDTP: принятые пакеты с запуска ingest", "type": "stat", "gridPos": {"h": 8, "w": 8, "x": 0, "y": 36}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "ndtp_packets_received_total", "legendFormat": "packets", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "auto", "textMode": "value_and_name", "colorMode": "value", "graphMode": "area"}},
+    {"id": 10, "title": "NDTP: ошибки и GPS фиксы (с запуска)", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 8, "y": 36}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "ndtp_errors_total or vector(0)", "legendFormat": "decode", "refId": "A"}, {"expr": "ndtp_invalid_gps_fixes_total or vector(0)", "legendFormat": "invalid GPS", "refId": "B"}, {"expr": "ndtp_suspect_gps_fixes_total or vector(0)", "legendFormat": "suspect GPS", "refId": "C"}], "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}},
+    {"id": 11, "title": "NDTP: принятые байты и активные соединения", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 16, "y": 36}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "ndtp_bytes_received_total or vector(0)", "legendFormat": "bytes", "refId": "A"}, {"expr": "ndtp_connections or vector(0)", "legendFormat": "connections", "refId": "B"}], "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}}
   ]
 }

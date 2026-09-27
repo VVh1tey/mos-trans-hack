@@ -85,8 +85,16 @@ class Dataset:
             self.points[row['sample_id']] = point
             self.events.append((timestamp(row['T']), 1, point))
         self.events.sort(key=lambda event: (event[0], event[1]))
+        self.first_eligible_at = next((when for when, kind, event in self.events
+                                       if kind == 0 and self.target_stop(event['vehicleId'], when)), None)
         self.start = self.events[0][0]
         self.end = max(self.events[-1][0], max(self.schedule_times), max(s['actualAt'] for stops in self.facts.values() for s in stops), max((p['_revealAt'] for p in self.points.values()), default=self.start))
+
+    def target_stop(self, vehicle, now):
+        times = self.planned_times.get(vehicle, [])
+        index = bisect.bisect_right(times, now + 600)
+        stops = self.schedules.get(vehicle, [])
+        return stops[index] if index < len(stops) and times[index] <= now + 900 else None
 
     def context(self, vehicle, now):
         stops = self.schedules.get(vehicle, [])
@@ -113,6 +121,7 @@ class Replay:
         self.sent = 0
         self.sockets = {}
         self.predictions = {}
+        self.last_stream_prediction = {}
         self.error = None
         self.session = 0
         self.thread = None
@@ -134,6 +143,7 @@ class Replay:
         self.http(self.ingest_url + '/replay/reset', {})
         self.cursor, self.sent, self.current = 0, 0, self.dataset.start
         self.predictions.clear()
+        self.last_stream_prediction.clear()
         self.session += 1
         self.error = None
         self.started = True
@@ -170,7 +180,7 @@ class Replay:
         self.sockets[unit].sendall(encode_navigation(event, self.sent+2))
         self.sent += 1
 
-    def predict(self, point):
+    def predict(self, point, source='labeled', stop=None):
         # Explicit allowlist: target_delay_s and future schedule facts never enter inference.
         body = {key: point[key] for key in ('sample_id', 'tr_id', 'T', 'target_stop_id', 'target_time_begin', 'cur_dev_s')}
         result = self.http(self.ml_url + '/predict', body)
@@ -179,7 +189,28 @@ class Replay:
             raise ValueError('Модель вернула некорректный прогноз')
         self.predictions[point['sample_id']] = {'sampleId': point['sample_id'], 'vehicleId': point['tr_id'],
                                                'at': timestamp(point['T']), 'targetAt': timestamp(point['target_time_begin']),
-                                               'prediction': value, 'model': result['model']}
+                                               'prediction': value, 'model': result['model'], 'source': source,
+                                               '_actual': stop['actualAt'] - stop['plannedAt'] if stop else None,
+                                               '_revealAt': stop['actualAt'] if stop else None}
+
+    def predict_stream(self, event):
+        """Forecast an eligible stop from the newest packet, without future facts as features."""
+        vehicle, now = event['vehicleId'], event['eventTime']
+        stop = self.dataset.target_stop(vehicle, now)
+        if stop is None:
+            return
+        key = (vehicle, stop['id'], stop['plannedAt'])
+        if now - self.last_stream_prediction.get(key, float('-inf')) < 120:
+            return
+        # Only an arrival already observed by now may supply the current deviation.
+        observed = self.dataset.context(vehicle, now)['observedDelaySeconds']
+        point = {'sample_id': f'stream:{vehicle}:{stop["id"]}:{int(now)}', 'tr_id': vehicle,
+                 'T': datetime.fromtimestamp(now, MOSCOW).isoformat(),
+                 'target_stop_id': stop['id'],
+                 'target_time_begin': datetime.fromtimestamp(stop['plannedAt'], MOSCOW).isoformat(),
+                 'cur_dev_s': observed if observed is not None else 0}
+        self.predict(point, source='stream', stop=stop)
+        self.last_stream_prediction[key] = now
 
     def advance(self, target, limit=2000):
         processed = 0
@@ -187,6 +218,7 @@ class Replay:
             when, kind, event = self.dataset.events[self.cursor]
             if kind == 0:
                 self.send(event)
+                self.predict_stream(event)
             else:
                 self.predict(event)
             self.cursor += 1
@@ -226,13 +258,17 @@ class Replay:
             data = self.dataset
             evaluated, predictions = [], []
             for key, prediction in self.predictions.items():
-                point = data.points[key]
-                actual = point['_actual'] if point['_revealAt'] <= self.current else None
+                point = data.points.get(key)
+                if point:
+                    actual = point['_actual'] if point['_revealAt'] <= self.current else None
+                else:
+                    actual = prediction['_actual'] if prediction['_revealAt'] <= self.current else None
                 error = abs(prediction['prediction']-actual) if actual is not None else None
-                if error is not None:
+                if error is not None and point:
                     evaluated.append(error)
-                predictions.append({**prediction, 'actual': actual, 'absoluteError': error})
-            latest_prediction = {p['vehicleId']: p for p in predictions}
+                predictions.append({k: v for k, v in prediction.items() if not k.startswith('_')} | {'actual': actual, 'absoluteError': error})
+            latest_prediction = {p['vehicleId']: p for p in predictions
+                                 if p['targetAt'] >= self.current or p['actual'] is None}
             if telemetry is not None:
                 telemetry = {**telemetry, 'vehicles': [
                     {**v, 'vehicleId': data.units[v['unitId']], **data.context(data.units[v['unitId']], self.current),
@@ -244,11 +280,14 @@ class Replay:
             return {'source': 'test', 'available': True, 'running': self.running, 'started': self.started,
                     'completed': self.current >= data.end, 'speed': self.speed, 'currentTime': self.current,
                     'startTime': data.start, 'endTime': data.end, 'session': self.session,
+                    'firstEligibleAt': data.first_eligible_at,
                     'trafficRows': data.traffic_count, 'scheduleRows': data.schedule_count,
                     'vehicleCount': len(data.units), 'scheduledVehicleCount': len(data.schedules),
                     'sentRows': self.sent, 'scheduleReached': bisect.bisect_right(data.schedule_times, self.current),
                     'progress': (self.current-data.start)/max(1, data.end-data.start),
                     'predictionCount': len(predictions), 'predictionTotal': len(data.points), 'evaluatedCount': len(evaluated),
+                    'streamPredictionCount': sum(p['source'] == 'stream' for p in predictions),
+                    'labeledPredictionCount': sum(p['source'] == 'labeled' for p in predictions),
                     'maeSeconds': sum(evaluated)/len(evaluated) if evaluated else None,
                     'predictions': predictions[-20:][::-1], 'telemetry': telemetry,
                     'ingestAvailable': telemetry is not None, 'errors': [self.error] if self.error else []}

@@ -1,0 +1,121 @@
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">replay</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/repo/backend/replay.py">/repo/backend/replay.py</a></td></tr></table>
+    <p><span class="code">Chronological&nbsp;playback&nbsp;of&nbsp;complete&nbsp;test&nbsp;CSVs&nbsp;through&nbsp;the&nbsp;real&nbsp;NDTP&nbsp;receiver.<br>
+&nbsp;<br>
+Naive&nbsp;dataset&nbsp;timestamps&nbsp;are&nbsp;interpreted&nbsp;as&nbsp;Moscow&nbsp;time.&nbsp;Future&nbsp;actual&nbsp;arrivals<br>
+are&nbsp;used&nbsp;only&nbsp;by&nbsp;the&nbsp;evaluator&nbsp;after&nbsp;their&nbsp;historical&nbsp;occurrence,&nbsp;never&nbsp;by&nbsp;ML.</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="bisect.html">bisect</a><br>
+<a href="csv.html">csv</a><br>
+</td><td class="multicolumn"><a href="math.html">math</a><br>
+<a href="os.html">os</a><br>
+</td><td class="multicolumn"><a href="re.html">re</a><br>
+<a href="socket.html">socket</a><br>
+</td><td class="multicolumn"><a href="threading.html">threading</a><br>
+<a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor index-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Classes</strong></td></tr>
+
+<tr><td class="decor index-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl>
+<dt class="heading-text"><a href="builtins.html#object">builtins.object</a>
+</dt><dd>
+<dl>
+<dt class="heading-text"><a href="replay.html#Dataset">Dataset</a>
+</dt><dt class="heading-text"><a href="replay.html#Replay">Replay</a>
+</dt></dl>
+</dd>
+</dl>
+ <p>
+<table class="section">
+<tr class="decor title-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><a name="Dataset">class <strong>Dataset</strong></a>(<a href="builtins.html#object">builtins.object</a>)</td></tr>
+
+<tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#Dataset">Dataset</a>(root)<br>
+&nbsp;<br>
+<br>&nbsp;</span></td></tr>
+<tr><td>&nbsp;</td>
+<td class="singlecolumn">Methods defined here:<br>
+<dl><dt><a name="Dataset-__init__"><strong>__init__</strong></a>(self, root)</dt><dd><span class="code">Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</span></dd></dl>
+
+<dl><dt><a name="Dataset-context"><strong>context</strong></a>(self, vehicle, now)</dt></dl>
+
+<dl><dt><a name="Dataset-target_stop"><strong>target_stop</strong></a>(self, vehicle, now)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><span class="code">dictionary&nbsp;for&nbsp;instance&nbsp;variables</span></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><span class="code">list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object</span></dd>
+</dl>
+</td></tr></table> <p>
+<table class="section">
+<tr class="decor title-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><a name="Replay">class <strong>Replay</strong></a>(<a href="builtins.html#object">builtins.object</a>)</td></tr>
+
+<tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#Replay">Replay</a>(root,&nbsp;host,&nbsp;port,&nbsp;http,&nbsp;ingest_url,&nbsp;ml_url)<br>
+&nbsp;<br>
+<br>&nbsp;</span></td></tr>
+<tr><td>&nbsp;</td>
+<td class="singlecolumn">Methods defined here:<br>
+<dl><dt><a name="Replay-__init__"><strong>__init__</strong></a>(self, root, host, port, http, ingest_url, ml_url)</dt><dd><span class="code">Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</span></dd></dl>
+
+<dl><dt><a name="Replay-advance"><strong>advance</strong></a>(self, target, limit=2000)</dt></dl>
+
+<dl><dt><a name="Replay-close_sockets"><strong>close_sockets</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Replay-control"><strong>control</strong></a>(self, action, speed=None)</dt></dl>
+
+<dl><dt><a name="Replay-load"><strong>load</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Replay-predict"><strong>predict</strong></a>(self, point, source='labeled', stop=None)</dt></dl>
+
+<dl><dt><a name="Replay-predict_stream"><strong>predict_stream</strong></a>(self, event)</dt><dd><span class="code">Forecast&nbsp;an&nbsp;eligible&nbsp;stop&nbsp;from&nbsp;the&nbsp;newest&nbsp;packet,&nbsp;without&nbsp;future&nbsp;facts&nbsp;as&nbsp;features.</span></dd></dl>
+
+<dl><dt><a name="Replay-reset"><strong>reset</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Replay-run"><strong>run</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Replay-send"><strong>send</strong></a>(self, event)</dt></dl>
+
+<dl><dt><a name="Replay-snapshot"><strong>snapshot</strong></a>(self, telemetry)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><span class="code">dictionary&nbsp;for&nbsp;instance&nbsp;variables</span></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><span class="code">list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object</span></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-number"><strong>number</strong></a>(value)</dt></dl>
+ <dl><dt><a name="-read_csv"><strong>read_csv</strong></a>(path)</dt></dl>
+ <dl><dt><a name="-timestamp"><strong>timestamp</strong></a>(value)</dt></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>MOSCOW</strong> = datetime.timezone(datetime.timedelta(seconds=10800))<br>
+<strong>SPEEDS</strong> = (1, 10, 60, 300, 3600)</td></tr></table>
