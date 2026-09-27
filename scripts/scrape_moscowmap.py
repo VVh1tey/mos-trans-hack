@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Crawl MoscowMap's public transport catalog into JSON, CSV, and GeoJSON."""
 import argparse
+import atexit
 import csv
 from html import unescape
 from html.parser import HTMLParser
 import json
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -17,6 +19,7 @@ BASE = 'https://www.moscowmap.ru'
 ROOT = '/marshruty-gorodskogo-transporta'
 INDEX = BASE + ROOT + '/avtobusy.html'
 START_PAGES = [BASE + ROOT + '.html', INDEX]
+_browser_worker = None
 COORD_PAIR = re.compile(r'(?<![\w.])(-?\d{2,3}\.\d{4,})\s*[,; ]\s*(-?\d{2,3}\.\d{4,})(?![\w.])')
 STOP_LINE = re.compile(r'^\s*(\d+)\s*[.)\-\u2013\u2014\u2212\u2022\u00b7]?\s+(.+?)\s*$')
 
@@ -76,6 +79,29 @@ def fetch(url, timeout=25):
         if attempt < 3:
             time.sleep(1.5 * (attempt + 1))
     raise RuntimeError(f'Could not download {url}: {last}')
+
+
+def fetch_rendered(url):
+    """Fetch a JS-rendered page through the repo's installed Playwright."""
+    global _browser_worker
+    helper = Path(__file__).with_name('moscowmap_browser.mjs')
+    if _browser_worker is None:
+        _browser_worker = subprocess.Popen(
+            ['node', str(helper)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            text=True, encoding='utf-8', cwd=Path(__file__).resolve().parents[1],
+        )
+        atexit.register(_browser_worker.terminate)
+    _browser_worker.stdin.write(json.dumps({'url': url}, ensure_ascii=False) + '\n')
+    _browser_worker.stdin.flush()
+    line = _browser_worker.stdout.readline()
+    if not line:
+        raise RuntimeError('Playwright worker exited without a response; install frontend dependencies and Chromium.')
+    result = json.loads(line)
+    if result.get('error'):
+        raise RuntimeError(f'Playwright could not render {url}: {result["error"]}')
+    if result.get('status', 200) >= 400:
+        raise RuntimeError(f'MoscowMap returned HTTP {result["status"]} in the browser for {url}')
+    return result['html']
 
 
 def normalize_coord(a, b):
@@ -155,7 +181,16 @@ def crawl(output, delay=0.4, limit=0):
             continue
         seen.add(url)
         try:
-            html = fetch(url)
+            try:
+                html = fetch(url)
+            except Exception as static_error:
+                print(f'Static fetch failed for {url} ({static_error}); retrying with Playwright')
+                html = fetch_rendered(url)
+            else:
+                _, initial_links, _, _ = parse(html)
+                if not initial_links:
+                    print(f'No static links in {url}; retrying with Playwright')
+                    html = fetch_rendered(url)
             fetched_pages += 1
             page, links, stops, points = parse(html)
             path = urlparse(url).path
