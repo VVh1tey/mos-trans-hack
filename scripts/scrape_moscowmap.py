@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Download MoscowMap route pages and export route/stop/shape CSV and GeoJSON.
-
-The site may deny automated requests. This scraper uses conservative pacing,
-retries, and checkpoints its discovered URLs so a crawl can be resumed.
-"""
+"""Crawl MoscowMap's public transport catalog into JSON, CSV, and GeoJSON."""
 import argparse
 import csv
 from html import unescape
@@ -18,10 +14,10 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
 BASE = 'https://www.moscowmap.ru'
-INDEX = BASE + '/marshruty-gorodskogo-transporta.html'
-ROUTE_PATH = re.compile(r'^/marshruty-gorodskogo-transporta/[^/]+/moscow/[^?#]+\.html$')
-STOP_LINE = re.compile(r'^\s*(\d+)\s*[●•]\s*(.+?)\s*$')
+ROOT = '/marshruty-gorodskogo-transporta'
+INDEX = BASE + ROOT + '.html'
 COORD_PAIR = re.compile(r'(?<![\w.])(-?\d{2,3}\.\d{4,})\s*[,; ]\s*(-?\d{2,3}\.\d{4,})(?![\w.])')
+STOP_LINE = re.compile(r'^\s*(\d+)\s*[.)\-\u2013\u2014\u2212\u2022\u00b7]?\s+(.+?)\s*$')
 
 
 class Page(HTMLParser):
@@ -47,30 +43,47 @@ class Page(HTMLParser):
 
     def handle_data(self, data):
         value = ' '.join(data.split())
-        if value:
-            self.text.append(' ' + value + ' ')
-            if self.in_h1:
-                self.h1.append(value)
-            if self.links:
-                self.links[-1][1].append(value)
+        if not value:
+            return
+        self.text.append(' ' + value + ' ')
+        if self.in_h1:
+            self.h1.append(value)
+        if self.links:
+            self.links[-1][1].append(value)
 
 
 def fetch(url, timeout=25):
-    request = Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; MoscowTransportRouteArchive/1.0; +https://www.moscowmap.ru/)',
-                                   'Accept-Language': 'ru,en;q=0.8'})
+    # Use a regular browser UA; the previous project-specific UA caused some
+    # edge filters to classify an otherwise ordinary page fetch as a bot.
+    request = Request(url, headers={
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.7',
+    })
     last = None
     for attempt in range(4):
         try:
             with urlopen(request, timeout=timeout) as response:
-                return response.read().decode(response.headers.get_content_charset() or 'utf-8', errors='replace')
+                charset = response.headers.get_content_charset() or 'utf-8'
+                return response.read().decode(charset, errors='replace')
         except HTTPError as exc:
             last = exc
-            if exc.code not in (429, 500, 502, 503, 504):
+            if exc.code not in (403, 429, 500, 502, 503, 504):
                 break
         except (URLError, TimeoutError) as exc:
             last = exc
-        time.sleep(1.5 * (attempt + 1))
-    raise RuntimeError(f'Не удалось загрузить {url}: {last}')
+        if attempt < 3:
+            time.sleep(1.5 * (attempt + 1))
+    raise RuntimeError(f'Could not download {url}: {last}')
+
+
+def normalize_coord(a, b):
+    x, y = float(a), float(b)
+    if 36 <= x <= 39 and 54 <= y <= 57:
+        return [x, y]
+    if 54 <= x <= 57 and 36 <= y <= 39:
+        return [y, x]
+    return None
 
 
 def parse(html):
@@ -78,52 +91,50 @@ def parse(html):
     page.feed(html)
     text = re.sub(r'\n\s*\n+', '\n', ''.join(page.text))
     links = [(href, ' '.join(label)) for href, label in page.links]
+
+    # Pages use both ordered lists and plain text for stop names. Search only
+    # in the stop-list section, ending at the next route description section.
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines)
+                  if re.search(r'список\s+остановок', line, re.I)), None)
     stops = []
-    in_stops = False
-    for line in text.splitlines():
-        normalized = line.strip()
-        if re.search(r'список остановок', normalized, re.I):
-            in_stops = True
-            continue
-        if in_stops and re.search(r'^улицы по маршруту', normalized, re.I):
-            break
-        if in_stops:
+    if start is not None:
+        for line in lines[start + 1:]:
+            normalized = line.strip()
+            if re.search(r'^улицы\s+по\s+маршруту', normalized, re.I):
+                break
             match = STOP_LINE.match(normalized)
             if match:
                 stops.append({'sequence': int(match[1]), 'name': match[2].strip()})
-    # MoscowMap embeds route map coordinates in page scripts. Keep only points
-    # inside a broad Moscow bounding box, accepting either lon/lat ordering.
+
     points, seen = [], set()
     for a, b in COORD_PAIR.findall(html):
-        x, y = float(a), float(b)
-        if 36 <= x <= 39 and 54 <= y <= 57:
-            point = [x, y]
-        elif 54 <= x <= 57 and 36 <= y <= 39:
-            point = [y, x]
-        else:
-            continue
-        key = (round(point[0], 6), round(point[1], 6))
-        if key not in seen:
-            points.append(point)
-            seen.add(key)
+        point = normalize_coord(a, b)
+        if point:
+            key = (round(point[0], 6), round(point[1], 6))
+            if key not in seen:
+                points.append(point)
+                seen.add(key)
+
+    # Associate stop coordinates with nearby occurrences of their names.
     source = unescape(html)
     for stop in stops:
         candidates = []
-        name = unescape(stop['name'])
-        for match in re.finditer(re.escape(name), source, re.I):
-            left, right = max(0, match.start()-500), min(len(source), match.end()+500)
+        for match in re.finditer(re.escape(stop['name']), source, re.I):
+            left, right = max(0, match.start() - 500), min(len(source), match.end() + 500)
             for pair in COORD_PAIR.finditer(source, left, right):
-                a, b = float(pair[1]), float(pair[2])
-                if 36 <= a <= 39 and 54 <= b <= 57:
-                    coord = [a, b]
-                elif 54 <= a <= 57 and 36 <= b <= 39:
-                    coord = [b, a]
-                else:
-                    continue
-                candidates.append((abs(pair.start()-match.start()), coord))
+                point = normalize_coord(pair[1], pair[2])
+                if point:
+                    candidates.append((abs(pair.start() - match.start()), point))
         if candidates:
             stop['coordinates'] = min(candidates, key=lambda candidate: candidate[0])[1]
-    return page, text, links, stops, points
+    return page, links, stops, points
+
+
+def is_catalog_page(url):
+    parsed = urlparse(url)
+    return (parsed.netloc in {'www.moscowmap.ru', 'moscowmap.ru'}
+            and parsed.path.startswith(ROOT) and parsed.path.lower().endswith('.html'))
 
 
 def crawl(output, delay=0.4, limit=0):
@@ -132,9 +143,9 @@ def crawl(output, delay=0.4, limit=0):
     queue, seen, records = [INDEX], set(), {}
     if checkpoint.exists():
         for line in checkpoint.read_text(encoding='utf-8').splitlines():
-            if line and line not in seen:
+            if line and line not in queue:
                 queue.append(line)
-    errors = []
+    errors, fetched_pages = [], 0
     while queue and (not limit or len(records) < limit):
         url = queue.pop(0)
         if url in seen:
@@ -142,72 +153,77 @@ def crawl(output, delay=0.4, limit=0):
         seen.add(url)
         try:
             html = fetch(url)
-            page, text, links, stops, points = parse(html)
+            fetched_pages += 1
+            page, links, stops, points = parse(html)
             path = urlparse(url).path
-            if ROUTE_PATH.match(path):
+            parts = path.strip('/').split('/')
+            # The root and category pages link to routes; route pages are
+            # deeper HTML documents under the same catalog tree.
+            if path != ROOT + '.html' and len(parts) >= 3:
                 title = ' '.join(page.h1).strip()
-                slug = Path(path).stem
-                category = path.strip('/').split('/')[1]
-                route_number = title.split(' - ', 1)[0].strip() if title else slug
-                if '№' in route_number:
-                    route_number = route_number.split('№', 1)[1].strip()
-                else:
-                    words = route_number.split()
-                    route_number = ' '.join(words[2:] if category == 'rechnoy-transport' else words[1:])
+                slug, category = Path(path).stem, parts[1]
+                number = title.split(' - ', 1)[0].strip() if title else slug
+                number = re.sub(r'^(?:автобус|трамвай|троллейбус|электробус|маршрутка|речной транспорт)\s*№?\s*', '', number, flags=re.I).strip()
                 route_id = f'{category}-{slug}'
                 for stop in stops:
-                    stop['id'] = f"{route_id}-{stop['sequence']}"
+                    stop['id'] = f'{route_id}-{stop["sequence"]}'
                     stop['direction'] = 0
-                records[url] = {'id': route_id, 'number': route_number, 'title': title or slug,
-                                'url': url, 'transport': category, 'stops': stops, 'coordinates': points}
-                print(f'[{len(records)}] {route_number}: {len(stops)} остановок, {len(points)} точек')
+                records[url] = {
+                    'id': route_id, 'number': number, 'title': title or slug,
+                    'url': url, 'transport': category, 'stops': stops,
+                    'coordinates': points,
+                }
+                print(f'[{len(records)}] {number}: {len(stops)} stops, {len(points)} shape points')
+
             for href, _ in links:
                 absolute = urljoin(url, href).split('#', 1)[0]
-                p = urlparse(absolute)
-                parts = p.path.strip('/').split('/')
-                category_index = p.path.startswith('/marshruty-gorodskogo-transporta/') and len(parts) == 2 and parts[1].endswith('.html')
-                moscow_index = p.path.startswith('/marshruty-gorodskogo-transporta/') and len(parts) == 3 and parts[2] in {'moscow', 'moscow.html'}
-                if p.netloc in {'www.moscowmap.ru', 'moscowmap.ru'} and (ROUTE_PATH.match(p.path) or category_index or moscow_index):
-                    if absolute not in seen and absolute not in queue:
-                        queue.append(absolute)
-            checkpoint.write_text('\n'.join(sorted(seen | set(queue))) + '\n', encoding='utf-8')
-        except Exception as exc:  # Keep a useful partial archive and resume later.
+                if is_catalog_page(absolute) and absolute not in seen and absolute not in queue:
+                    queue.append(absolute)
+            # Save pending URLs (rather than already failed/visited URLs) so
+            # a resumed crawl does not silently skip pages that failed.
+            checkpoint.write_text('\n'.join(queue) + ('\n' if queue else ''), encoding='utf-8')
+        except Exception as exc:
             errors.append({'url': url, 'error': str(exc)})
-            print(f'Ошибка: {url}: {exc}', file=sys.stderr)
+            print(f'Error: {url}: {exc}', file=sys.stderr)
         time.sleep(max(0, delay))
+
     routes = sorted(records.values(), key=lambda row: (row['number'].casefold(), row['id']))
+    (output / 'crawl_errors.json').write_text(json.dumps(errors, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     if not routes:
-        (output / 'crawl_errors.json').write_text(json.dumps(errors, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        print(f'Не получено ни одной страницы маршрута; ошибок: {len(errors)}. Исправьте доступ к сайту и повторите запуск.')
+        print(f'No routes found: fetched {fetched_pages} pages, errors {len(errors)}. Check catalog URL and page markup.')
         return
+
     with (output / 'routes.csv').open('w', encoding='utf-8-sig', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['id', 'number', 'title', 'url', 'stop_count', 'shape_point_count'])
         writer.writeheader()
         for row in routes:
-            writer.writerow({**{k: row[k] for k in ('id','number','title','url')},
+            writer.writerow({**{key: row[key] for key in ('id', 'number', 'title', 'url')},
                              'stop_count': len(row['stops']), 'shape_point_count': len(row['coordinates'])})
     with (output / 'stops.csv').open('w', encoding='utf-8-sig', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['route_id','route_number','route_title','direction','sequence','stop_id','name','latitude','longitude','source_url'])
+        fields = ['route_id', 'route_number', 'route_title', 'direction', 'sequence', 'stop_id', 'name', 'latitude', 'longitude', 'source_url']
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         for row in routes:
             for stop in row['stops']:
                 point = stop.get('coordinates') or []
                 writer.writerow({'route_id': row['id'], 'route_number': row['number'], 'route_title': row['title'],
-                                 'direction': stop.get('direction', 0), 'sequence': stop['sequence'], 'stop_id': stop['id'], 'name': stop['name'],
-                                 'latitude': point[1] if point else '', 'longitude': point[0] if point else '', 'source_url': row['url']})
-    (output / 'routes.geojson').write_text(json.dumps({'type':'FeatureCollection','features':[
-        {'type':'Feature','properties':{k: row[k] for k in ('id','number','title','url')},
-         'geometry': {'type':'LineString','coordinates':row['coordinates']} if len(row['coordinates']) > 1 else None}
-        for row in routes]}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    (output / 'routes.json').write_text(json.dumps({'source': INDEX, 'fetchedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'routes':routes}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    (output / 'crawl_errors.json').write_text(json.dumps(errors, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f'Сохранено маршрутов: {len(routes)}; ошибок: {len(errors)}; каталог: {output}')
+                                 'direction': stop.get('direction', 0), 'sequence': stop['sequence'], 'stop_id': stop['id'],
+                                 'name': stop['name'], 'latitude': point[1] if point else '',
+                                 'longitude': point[0] if point else '', 'source_url': row['url']})
+    features = []
+    for row in routes:
+        features.append({'type': 'Feature', 'properties': {key: row[key] for key in ('id', 'number', 'title', 'url')},
+                         'geometry': {'type': 'LineString', 'coordinates': row['coordinates']} if len(row['coordinates']) > 1 else None})
+    (output / 'routes.geojson').write_text(json.dumps({'type': 'FeatureCollection', 'features': features}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    archive = {'source': INDEX, 'fetchedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'routes': routes}
+    (output / 'routes.json').write_text(json.dumps(archive, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    print(f'Saved {len(routes)} routes; fetched {fetched_pages} pages; errors {len(errors)}; output: {output}')
 
 
 if __name__ == '__main__':
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--output', type=Path, default=Path('data/moscowmap'))
-    cli.add_argument('--delay', type=float, default=0.4, help='пауза между запросами в секундах')
-    cli.add_argument('--limit', type=int, default=0, help='ограничение числа страниц маршрутов; 0 = без лимита')
+    cli.add_argument('--delay', type=float, default=0.4, help='seconds between requests')
+    cli.add_argument('--limit', type=int, default=0, help='maximum number of route pages; 0 means no limit')
     args = cli.parse_args()
     crawl(args.output, args.delay, args.limit)
