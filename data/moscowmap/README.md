@@ -5,7 +5,24 @@ browser crawler writes `routes.json`, `routes.csv`, `stops.csv`, and
 `routes.geojson` here. A crawl that downloads zero route pages does not write an
 empty catalog.
 
-## Daytime OpenStreetMap routes
+## Preferred source: Moscow open-data schedules
+
+The local snapshots under `data/additional/` contain the route catalog (60664)
+and stop catalog with coordinates (60662), but they do not include daytime stop
+sequences or route shapes. The official portal also publishes related datasets:
+
+- 60661, trip schedules: route/trip key, stop code, stop order and scheduled time;
+- 60666, route calendar: service days and effective dates;
+- 60665, number of vehicle departures/exits.
+
+The sequence can be joined to stop coordinates by stop code and to the route
+catalog by route code. These official records are the right source for the
+daytime stop order. They do not by themselves provide a road-following shape;
+that still needs a separate geometry source or route reconstruction. Dataset
+60661 is very large and the portal has had download/API reliability issues, so
+no full local schedule export is committed yet.
+
+## OpenStreetMap geometry fallback
 
 Run from a network that can reach one of the public Overpass servers:
 
@@ -14,13 +31,12 @@ python scripts/scrape_osm_day_routes.py
 ```
 
 The script writes `osm_day_routes.json` here, where Docker and the local
-backend import it automatically. It includes route geometry, the ordered stop
-members found on each OSM route relation, query metadata and license
+backend import it automatically. It includes route geometry, ordered stop
+members present in each OSM route relation, query metadata and license
 attribution. `--limit N` is for a small trial export; omit it for the full
-query. Public route mapping can be incomplete, so this archive represents the
-OSM-mapped daytime routes in the query area, not a guaranteed complete
-official route catalog. Review its route count and missing relation summary
-before treating it as complete.
+query. This is useful for geometry and cross-checking, but public route mapping
+can be incomplete. Review its route count against official datasets 60661 and
+60664 before using it as the full daytime catalog.
 
 The source data is OpenStreetMap under ODbL 1.0. Keep the attribution visible
 where the data is displayed and retain the source metadata in the archive.
