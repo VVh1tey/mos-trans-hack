@@ -15,7 +15,8 @@ from urllib.request import Request, urlopen
 
 BASE = 'https://www.moscowmap.ru'
 ROOT = '/marshruty-gorodskogo-transporta'
-INDEX = BASE + ROOT + '.html'
+INDEX = BASE + ROOT + '/avtobusy.html'
+START_PAGES = [BASE + ROOT + '.html', INDEX]
 COORD_PAIR = re.compile(r'(?<![\w.])(-?\d{2,3}\.\d{4,})\s*[,; ]\s*(-?\d{2,3}\.\d{4,})(?![\w.])')
 STOP_LINE = re.compile(r'^\s*(\d+)\s*[.)\-\u2013\u2014\u2212\u2022\u00b7]?\s+(.+?)\s*$')
 
@@ -142,7 +143,7 @@ def is_catalog_page(url):
 def crawl(output, delay=0.4, limit=0):
     output.mkdir(parents=True, exist_ok=True)
     checkpoint = output / 'discovered_urls.txt'
-    queue, seen, records = [INDEX], set(), {}
+    queue, seen, records = list(START_PAGES), set(), {}
     if checkpoint.exists():
         for line in checkpoint.read_text(encoding='utf-8').splitlines():
             if line and line not in queue:
@@ -179,7 +180,10 @@ def crawl(output, delay=0.4, limit=0):
 
             catalog_links = []
             for href, _ in links:
-                absolute = urljoin(url, href).split('#', 1)[0].split('?', 1)[0]
+                # Query parameters can select the catalog's number-range tabs
+                # or reveal the full route list, so retain them while removing
+                # only the in-page fragment.
+                absolute = urljoin(url, href).split('#', 1)[0]
                 if is_catalog_page(absolute):
                     catalog_links.append(absolute)
                     if absolute not in seen and absolute not in queue:
