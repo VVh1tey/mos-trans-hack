@@ -46,8 +46,4 @@ docker compose -f compose.train.yaml run --rm trainer python select.py <run_id>
 docker compose up -d --force-recreate ml
 ```
 
-Каждый запуск создаёт отдельную папку `runs/<run_id>/` с `manifest.json`, `metrics.json` и файлом модели. `compare.py` создаёт `runs/index.csv`. `select.py` копирует совместимую модель в `runs/selected.json`, откуда её читает онлайн-сервис. Сравнивайте MAE только для одинакового `dataset_fingerprint`. Добавление признаков и моделей, общий обмен результатами и передача проекта описаны в [инструкции по экспериментам](docs/experiment-workflow.md).
-
-## Разработка
-
-Код присылайте через Git и PR; датасет, веса и `runs/` в Git не добавляйте. В PR укажите команду запуска, входы, выходы и способ проверки. Сверяйте API с [контрактами](contracts/README.md), а поток и границы заглушек — с [архитектурными решениями](docs/architecture-decisions.md). Один проверяемый кусок работы на PR удобнее для интеграции.
+Каждый запуск создаёт отдельную папку `runs/<run_id>/` с `manifest.json`, `metrics.json` и файлом модели. `compare.py` создаёт `runs/index.csv`. `select.py` копирует совместимую модель в `runs/selected.json`, откуда её читает онлайн-сервис. Сравнивайте MAE только для одинакового `dataset_fingerprint`. Добавление признаков и моделей, общий обмен результатами и передача проекта описаны в [инструкции по экспериментам](docs/experiment-workflow.md).выходы и способ проверки. Сверяйте API с [контрактами](contracts/README.md), а поток и границы заглушек — с [архитектурными решениями](docs/architecture-decisions.md). Один проверяемый кусок работы на PR удобнее для интеграции.
