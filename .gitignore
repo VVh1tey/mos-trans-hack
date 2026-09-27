@@ -4,6 +4,7 @@
 /data/*
 !/data/README.md
 !/data/additional/
+/data/additional/*
 !/data/additional/README.md
 !/data/additional/data-60662-22-09-2026.csv
 !/data/additional/data-60664-22-09-2026.csv
