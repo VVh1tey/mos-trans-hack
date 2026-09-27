@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 WORKDIR /app
+RUN pip install --no-cache-dir catboost==1.2.8
 COPY service.py ./
+COPY experiments ./experiments
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8001
 CMD ["python", "service.py"]

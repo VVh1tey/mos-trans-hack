@@ -1,6 +1,7 @@
 FROM python:3.12-slim
 WORKDIR /app
-COPY train.py compare.py select.py ./
+RUN pip install --no-cache-dir catboost==1.2.8
+COPY train.py compare.py choose.py ./
 COPY experiments ./experiments
 ENV PYTHONUNBUFFERED=1
 CMD ["python", "train.py"]

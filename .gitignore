@@ -3,6 +3,13 @@
 /dataset.zip
 /data/*
 !/data/README.md
+!/data/moscowmap/
+/data/moscowmap/*
+!/data/moscowmap/README.md
+!/data/moscowmap/routes.json
+!/data/moscowmap/routes.csv
+!/data/moscowmap/stops.csv
+!/data/moscowmap/routes.geojson
 /artifacts/
 /outputs/
 /models/

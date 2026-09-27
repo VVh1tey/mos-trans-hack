@@ -1,0 +1,73 @@
+import { useEffect, useRef, useState } from 'react';
+import { BusFront, Clock3, Gauge, LoaderCircle, Pause, Play, RotateCcw, Target } from 'lucide-react';
+import { api } from './api';
+import type { SimulationStatus, TelemetryVehicle } from './types';
+
+export const replayTime = (value: number, date = false) => new Date(value * 1000).toLocaleString('ru-RU', { timeZone:'Europe/Moscow', ...(date ? {day:'2-digit', month:'2-digit'} as const : {}), hour:'2-digit', minute:'2-digit', second:'2-digit' });
+export function useSimulation() {
+  const [state, setState] = useState<SimulationStatus | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const generation = useRef(0), controlling = useRef(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      const version = generation.current;
+      try {
+        if (!controlling.current) {
+          const next = await api.simulation(controller.signal);
+          if (!controller.signal.aborted && generation.current === version) { setState(next); setError(''); }
+        }
+      } catch (e) { if (!controller.signal.aborted && generation.current === version) setError((e as Error).message); }
+      finally { if (!controller.signal.aborted) timer = setTimeout(poll, 1000); }
+    }
+    void poll();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [refresh]);
+  async function control(action: 'start' | 'stop' | 'reset' | 'speed', speed?: number) {
+    if (controlling.current) return;
+    controlling.current = true; generation.current++; setBusy(true); setError('');
+    try { setState(await api.controlSimulation(action, speed)); }
+    catch (e) { setError((e as Error).message); }
+    finally { controlling.current = false; setBusy(false); }
+  }
+  return {state, error, busy, control, retry: () => setRefresh(v => v+1)};
+}
+
+export function ReplayControls({simulation}: {simulation: ReturnType<typeof useSimulation>}) {
+  const {state, error, busy, control, retry} = simulation;
+  const label = !state ? 'Загрузка данных…' : !state.available ? 'Данные недоступны' : state.completed ? 'Воспроизведение завершено' : state.running ? 'Воспроизведение идёт' : state.started ? 'Пауза' : 'Готово к запуску';
+  return <section className="panel replay-controls" aria-label="Воспроизведение тестовых данных">
+    <div className="replay-control-row"><div className="replay-title"><strong>Исторические данные · test</strong><span>{state?.available ? `${state.trafficRows.toLocaleString('ru-RU')} записей · ${state.scheduleRows.toLocaleString('ru-RU')} прибытий в расписании` : 'Полные traffic.csv и schedule.csv'}</span></div>
+      <div className="replay-actions"><label>Скорость<select aria-label="Скорость воспроизведения" value={state?.speed || 60} disabled={busy || !state?.available} onChange={e => void control('speed', Number(e.target.value))}>{[1,10,60,300,3600].map(v => <option key={v} value={v}>×{v}</option>)}</select></label>
+        <button className="primary-button" disabled={busy || !state?.available || (!state.running && !state.ingestAvailable)} onClick={() => void control(state?.running ? 'stop' : 'start')}>{busy ? <LoaderCircle size={16} className="spin"/> : state?.running ? <Pause size={16}/> : <Play size={16}/>} {state?.running ? 'Пауза' : state?.completed ? 'Запустить заново' : state?.started ? 'Продолжить' : 'Запустить'}</button>
+        <button disabled={busy || !state?.available || !state.started} onClick={() => void control('reset')}><RotateCcw size={16}/>С начала</button>
+      </div></div>
+    <div className="replay-timeline"><span>{error ? 'Нет связи с сервером' : label}</span><strong>{state?.available ? replayTime(state.currentTime, true) : '—'} МСК</strong><progress aria-label="Прогресс воспроизведения" max={1} value={state?.progress || 0}/><span>{Math.round((state?.progress || 0)*100)}%</span></div>
+    {(error || state?.errors.length) ? <div className="replay-error" role="alert"><span>{error || state?.errors.join(' ')}</span><button onClick={retry}>Повторить</button></div> : null}
+  </section>;
+}
+
+export function ReplayMetrics({state}: {state: SimulationStatus | null}) {
+  const count = state?.telemetry?.vehicles.filter(v => v.locationValid && !v.stale).length ?? 0;
+  const metrics = [
+    {name:'ТС на карте', value:count, Icon:BusFront},
+    {name:'Обработано записей', value:(state?.sentRows || 0).toLocaleString('ru-RU'), Icon:Gauge},
+    {name:'Прогнозов модели', value:state?.predictionCount || 0, Icon:Target},
+    {name:'Ошибка MAE, сек', value:state?.maeSeconds == null ? '—' : state.maeSeconds.toFixed(1), Icon:Gauge},
+    {name:'Прибытий по плану', value:(state?.scheduleReached || 0).toLocaleString('ru-RU'), Icon:Clock3},
+  ];
+  return <div className="metrics replay-metrics">{metrics.map(({name,value,Icon}) => <div className="metric" key={name}><span className="metric-icon"><Icon size={26}/></span><div><span className="metric-label">{name}</span><div className="metric-value">{value}</div></div></div>)}</div>;
+}
+
+export function ReplayDetails({state, selected}: {state: SimulationStatus | null; selected: TelemetryVehicle | null}) {
+  return <section className="panel replay-details"><div className="section-heading"><h2>{selected ? `ТС №${selected.vehicleId}` : 'Проверка модели'}</h2></div>
+    {selected && <div className="replay-vehicle-details"><dl><div><dt>Скорость</dt><dd>{selected.speedKmh} км/ч</dd></div><div><dt>Последний пакет</dt><dd>{replayTime(selected.eventTime)}</dd></div><div><dt>Следующая остановка</dt><dd>{selected.nextStop?.name || (selected.scheduleCount ? 'Расписание завершено' : 'Нет расписания для этого ТС')}</dd></div>{selected.nextStop && <div><dt>Прибытие по плану</dt><dd>{replayTime(selected.nextStop.plannedAt, true)}</dd></div>}{selected.observedDelaySeconds != null && <div><dt>Последнее отклонение</dt><dd>{Math.round(selected.observedDelaySeconds)} сек</dd></div>}</dl></div>}
+    <div className="replay-evaluation"><p>{state?.evaluatedCount ? `Сравнено с фактом: ${state.evaluatedCount} прогнозов.` : 'Ошибка появится после фактического прибытия ТС.'}</p>
+      {!state?.predictionCount && <p>Первый прогноз в test — в 02:05 МСК. Ускорьте воспроизведение, чтобы перейти к нему быстрее.</p>}
+      {(state?.predictions || []).slice(0,5).map(p => <div className="replay-prediction" key={p.sampleId}><strong>ТС №{p.vehicleId}<span>{replayTime(p.at)}</span></strong><div>Прогноз: {Math.round(p.prediction)} сек</div><div>{p.actual == null ? 'Ожидаем фактическое прибытие' : `Факт: ${Math.round(p.actual)} сек · ошибка: ${Math.round(p.absoluteError!)} сек`}</div></div>)}
+      <p className="replay-note">Прогноз строится без будущих данных. MAE — средняя абсолютная ошибка в секундах.</p>
+    </div></section>;
+}

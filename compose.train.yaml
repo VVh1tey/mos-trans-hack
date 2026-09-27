@@ -8,6 +8,7 @@ services:
     volumes:
       - ./dataset:/dataset:ro
       - ./runs:/runs
+      - ./outputs:/outputs
     environment:
       TRAIN_MODULE: ${TRAIN_MODULE:-experiments.baseline}
       TRAIN_RUN_NAME: ${TRAIN_RUN_NAME:-}

@@ -41,11 +41,17 @@ if not MODULE.startswith("experiments.") or MODULE.count(".") != 1:
 train = load_split("train")
 test = load_split("test")
 experiment = importlib.import_module(MODULE)
-model = experiment.fit(train, DATASET)
-predictions = experiment.predict(model, test, DATASET, "test")
-if len(predictions) != len(test):
-    raise SystemExit("Experiment returned the wrong number of predictions")
-mae = sum(abs(float(row["target_delay_s"]) - prediction) for row, prediction in zip(test, predictions)) / len(test)
+if hasattr(experiment, "run"):
+    model, metrics = experiment.run(train, test, DATASET)
+else:
+    model = experiment.fit(train, DATASET)
+    predictions = experiment.predict(model, test, DATASET, "test")
+    if len(predictions) != len(test):
+        raise SystemExit("Experiment returned the wrong number of predictions")
+    mae = sum(abs(float(row["target_delay_s"]) - prediction) for row, prediction in zip(test, predictions)) / len(test)
+    metrics = {"train_rows": len(train), "test_rows": len(test), "test_mae_seconds": mae}
+    if hasattr(model, "clean_train_rows"):
+        metrics["clean_train_rows"] = model.clean_train_rows
 
 run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
 run_dir = RUNS / run_id
@@ -65,13 +71,13 @@ for relative in (
     if path.is_file():
         files[relative] = sha256_file(path)
 fingerprint = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
-metrics = {"train_rows": len(train), "test_rows": len(test), "test_mae_seconds": mae}
 manifest = {
     "run_id": run_id,
     "run_name": RUN_NAME,
     "created_at_utc": datetime.now(timezone.utc).isoformat(),
     "module": MODULE,
     "feature_set": getattr(experiment, "FEATURE_SET", "unspecified"),
+    "evaluation_protocol": metrics.get("evaluation_protocol", "original_test"),
     "git_commit": os.environ.get("GIT_COMMIT", "unknown"),
     "dataset_fingerprint": fingerprint,
     "input_sha256": files,

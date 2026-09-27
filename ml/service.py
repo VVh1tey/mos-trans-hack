@@ -1,19 +1,20 @@
-"""Small inference adapter for the baseline artifact. Replace with model serving."""
+"""Serve the selected CatBoost experiment through the existing HTTP contract."""
 
 import json
+import importlib
 import math
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-
-MODEL_FILE = Path(os.environ.get("MODEL_FILE", "/runs/selected.json"))
-
-
-def model():
-    if MODEL_FILE.is_file():
-        return json.loads(MODEL_FILE.read_text(encoding="utf-8"))
-    return {"name": "fallback-cur-dev", "offset_seconds": 0.0}
+RUNS = Path(os.environ.get("RUNS_DIR", "/runs"))
+selection = json.loads((RUNS / "selection.json").read_text(encoding="utf-8"))
+run_dir = RUNS / selection["run_id"]
+manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+if manifest["module"] not in {"experiments.catboost_clean", "experiments.catboost_timeseries"}:
+    raise RuntimeError("Unsupported selected experiment")
+experiment = importlib.import_module(manifest["module"])
+MODEL = experiment.load_model(run_dir / manifest["model_file"])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -27,7 +28,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_json(200, {"status": "ok", "service": "ml", "model": model()["name"]})
+            self.send_json(200, {"status": "ok", "service": "ml", "model": selection["run_id"]})
         elif self.path == "/metrics":
             body = b'# HELP scaffold_ready Service process is running.\n# TYPE scaffold_ready gauge\nscaffold_ready{service="ml"} 1\n'
             self.send_response(200)
@@ -52,8 +53,7 @@ class Handler(BaseHTTPRequestHandler):
             deviation = float(point["cur_dev_s"])
             if not math.isfinite(deviation):
                 raise ValueError("cur_dev_s must be finite")
-            current = model()
-            self.send_json(200, {"sample_id": point["sample_id"], "prediction": deviation + current["offset_seconds"], "model": current["name"]})
+            self.send_json(200, {"sample_id": point["sample_id"], "prediction": experiment.predict_one(MODEL, point), "model": selection["run_id"]})
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             self.send_json(400, {"error": str(exc)})
 

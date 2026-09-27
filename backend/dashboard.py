@@ -10,7 +10,7 @@ from pathlib import Path
 CATALOG = json.loads((Path(__file__).parent / 'demo/routes.json').read_text(encoding='utf-8'))
 for _route in CATALOG['routes']:
     _route.setdefault('serviceType', 'night')
-IMPORT_DIR = Path(os.environ.get('ROUTES_IMPORT_DIR', Path(__file__).resolve().parents[1] / 'data' / 'routes'))
+IMPORT_DIR = Path(os.environ.get('ROUTES_IMPORT_DIR', Path(__file__).resolve().parents[1] / 'data' / 'moscowmap'))
 SETTINGS = {'mediumDelaySeconds': 120, 'highDelaySeconds': 420, 'staleAfterSeconds': 90,
             'colors': {'low': '#24855b', 'medium': '#bd7608', 'high': '#b52238'}}
 
@@ -57,9 +57,41 @@ def imported_routes():
     for path in sorted(IMPORT_DIR.iterdir()):
         if path.name.startswith('_') or path.stem == 'example' or path.suffix.lower() not in {'.json', '.csv'}:
             continue
+        if path.stem in {'routes', 'stops'} and path.suffix.lower() == '.csv':
+            continue
         if path.suffix.lower() == '.json':
             value = json.loads(path.read_text(encoding='utf-8-sig'))
-            routes.extend(value if isinstance(value, list) else value.get('routes', []))
+            items = value if isinstance(value, list) else value.get('routes', [])
+            for item in items:
+                if item.get('directions'):
+                    routes.append(item)
+                    continue
+                # MoscowMap provides ordered stop names and route geometry. Its
+                # stop coordinates are not exposed consistently, so distribute
+                # stops along the published shape and mark that approximation.
+                shape = item.get('coordinates') or []
+                source_stops = item.get('stops') or []
+                if len(shape) < 2 or not source_stops:
+                    continue
+                has_stop_coordinates = all(stop.get('coordinates') for stop in source_stops)
+                stops = []
+                for index, stop in enumerate(source_stops):
+                    point_index = round(index * max(0, len(shape)-1) / max(1, len(source_stops)-1))
+                    if not shape:
+                        break
+                    coordinate = stop.get('coordinates') or shape[point_index]
+                    stops.append({'id': stop.get('id', f"{item['id']}-{stop.get('sequence', index+1)}"),
+                                  'name': stop['name'], 'coordinates': coordinate})
+                route_id = str(item.get('id') or item.get('number'))
+                number = str(item.get('number') or route_id)
+                route_type = item.get('transport', 'avtobusy')
+                routes.append({'id': route_id, 'number': number, 'name': item.get('title', number),
+                               'transport': {'avtobusy': 'bus', 'trolleibusy': 'trolleybus',
+                                             'tramvai': 'tram', 'marshrutki': 'minibus',
+                                             'rechnoy-transport': 'river'}.get(route_type, route_type),
+                               'serviceType': 'day', 'intervalMinutes': 10,
+                               'coordinateQuality': 'published shape; stop coordinates parsed from page' if has_stop_coordinates else 'published shape; stops without coordinates interpolated by sequence',
+                               'directions': [{'coordinates': shape, 'stops': stops}]})
             continue
         with path.open(encoding='utf-8-sig', newline='') as file:
             for row in csv.DictReader(file):

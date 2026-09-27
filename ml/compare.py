@@ -23,11 +23,12 @@ for directory in runs.iterdir():
         "feature_set": manifest["feature_set"],
         "git_commit": manifest["git_commit"],
         "dataset_fingerprint": manifest["dataset_fingerprint"],
+        "evaluation_protocol": manifest.get("evaluation_protocol", "original_test"),
         "test_mae_seconds": metrics["test_mae_seconds"],
         "model_file": manifest["model_file"],
     }.items()})
-rows.sort(key=lambda row: (row["dataset_fingerprint"], float(row["test_mae_seconds"])))
-fields = ["run_id", "model", "feature_set", "git_commit", "dataset_fingerprint", "test_mae_seconds", "model_file"]
+rows.sort(key=lambda row: (row["dataset_fingerprint"], row["evaluation_protocol"], float(row["test_mae_seconds"])))
+fields = ["run_id", "model", "feature_set", "git_commit", "dataset_fingerprint", "evaluation_protocol", "test_mae_seconds", "model_file"]
 runs.mkdir(parents=True, exist_ok=True)
 temporary = runs / "index.csv.tmp"
 with temporary.open("w", encoding="utf-8", newline="") as output:
@@ -36,4 +37,4 @@ with temporary.open("w", encoding="utf-8", newline="") as output:
     writer.writerows(rows)
 temporary.replace(runs / "index.csv")
 for row in rows:
-    print(f'{row["test_mae_seconds"]:8.3f} s  {row["model"]:<28} {row["run_id"]}  data={row["dataset_fingerprint"][:10]}')
+    print(f'{row["test_mae_seconds"]:8.3f} s  {row["model"]:<28} {row["run_id"]}  protocol={row["evaluation_protocol"]}  data={row["dataset_fingerprint"][:10]}')

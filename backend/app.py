@@ -7,6 +7,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 from urllib.parse import urlparse, parse_qs
 import dashboard
+import simulation
 
 
 ML_URL = os.environ.get("ML_URL", "http://ml:8001")
@@ -24,6 +25,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == '/api/dashboard/simulation':
+            self.send_json(200, simulation.status())
+            return
         if parsed.path.startswith('/api/dashboard'):
             try:
                 query = parse_qs(parsed.query)
@@ -53,11 +57,32 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
         elif self.path == "/api/predictions":
-            self.send_json(200, {"predictions": [], "mode": "scaffold"})
+            state = simulation.status()
+            self.send_json(200, {"predictions": state.get('predictions', []),
+                                 "predictionCount": state.get('predictionCount', 0),
+                                 "predictionTotal": state.get('predictionTotal', 0),
+                                 "currentTime": state.get('currentTime'),
+                                 "model": state.get('predictions', [{}])[0].get('model') if state.get('predictions') else None,
+                                 "mode": "replay" if state.get('available') else "unavailable",
+                                 "errors": state.get('errors', [])})
         else:
             self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path == '/api/dashboard/simulation':
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 1024:
+                    raise ValueError('body must be 1..1024 bytes')
+                body = json.loads(self.rfile.read(length))
+                if not isinstance(body, dict):
+                    raise ValueError('expected JSON object')
+                self.send_json(200, simulation.control(body.get('action'), body.get('speed')))
+            except (ValueError, TypeError) as exc:
+                self.send_json(400, {'error': str(exc)})
+            except (URLError, TimeoutError, OSError) as exc:
+                self.send_json(503, {'error': 'Не удалось изменить симуляцию. Проверьте доступность emulator и ingest и повторите.'})
+            return
         if self.path.startswith('/api/dashboard/'):
             try:
                 length = int(self.headers.get('Content-Length', '0'))

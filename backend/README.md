@@ -1,7 +1,16 @@
 # Backend
 
+Работающая интеграция предоставленного эмулятора: `ndtp.py` (парсер), `ingest.py` (TCP + снимок телеметрии), `simulation.py` (REST-управление). [Запуск, API и проверки](../docs/ndtp-simulation.md).
+
 Первая поставка: принять NDTP пакет, сохранить событие, собрать состояние ТС, вызвать ML на подходящей точке и отдать прогноз через API. Стек: Python 3.12, FastAPI, asyncio, Redis и PostgreSQL.
 
-Сейчас `app.py` предоставляет `/health`, `/metrics`, пустой `/api/predictions` и проксирует `/api/predict` к ML сервису. `scaffold.py` запускается отдельными процессами ingest, feature worker, scheduler и archive worker. Ingest пока только принимает TCP байты; остальные публикуют состояние, но не обрабатывают события. Контейнеры собираются из `backend/Dockerfile`.
+Сейчас `app.py` предоставляет `/health`, `/metrics`, пустой `/api/predictions`, управление `/api/dashboard/simulation` и проксирует `/api/predict` к ML сервису. `ingest.py` принимает и декодирует NDTP, хранит последние позиции и отдаёт `/telemetry`. `scaffold.py` запускается отдельными процессами feature worker, scheduler и archive worker: они публикуют состояние, но не обрабатывают события. Контейнеры собираются из `backend/Dockerfile`.
+
+Для React-дашборда добавлен `/api/dashboard`: снимки сети/маршрута, настройки и
+What-if. Провайдер `dashboard.py` выдаёт демонстрационные значения поверх реальной
+геометрии из `demo/routes.json`. [Контракт и метрики](../contracts/dashboard.md).
+Запуск из корня: `python backend/app.py`; frontend-демо работает без ML и БД.
+Этот HTTP-адаптер остаётся на стандартной библиотеке Python; миграция в FastAPI
+и подключение онлайн-провайдеров — отдельная следующая итерация.
 
 Разделяйте приём пакетов, обработку признаков, scheduler и HTTP API по модулям. Реальные API схемы обновляйте в `../contracts/`. Конфигурация берётся из переменных окружения; команда запуска появится вместе с сервисом.

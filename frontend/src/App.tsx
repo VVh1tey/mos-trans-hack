@@ -4,6 +4,7 @@ import { api } from './api';
 import { FAVORITES_KEY, readFavorites, type FavoriteRoute } from './favorites';
 import { Chart } from './Chart';
 import { ScenarioView } from './ScenarioView';
+import { ReplayControls, ReplayMetrics, ReplayDetails, useSimulation } from './ReplayControls';
 import type { Risk, Route, Settings, Snapshot, Summary, Vehicle } from './types';
 import { age, delay, downloadCsv, riskLabels, routeHref, time } from './utils';
 const TransportMap = lazy(()=>import('./TransportMap'));
@@ -17,18 +18,18 @@ function RiskBadge({risk}:{risk:Risk}) { return <span className={`risk-badge ${r
 function Empty({children}:{children:React.ReactNode}) {return <div className="empty-state"><ListFilter size={25}/><strong>{children}</strong><span>Измените поиск или фильтр риска.</span></div>;}
 function Metrics({summary,routeMode}:{summary:Summary;routeMode:boolean}) {
   const items=routeMode ? [
-    {name:'ТС на линии',value:summary.activeVehicles,suffix:'в демо-сценарии',Icon:BusFront},
+    {name:'ТС на линии',value:summary.activeVehicles,suffix:'',Icon:BusFront},
     {name:'Инциденты',value:summary.incidentCount,suffix:'требуют внимания',Icon:TriangleAlert,tone:'high'},
     {name:'Среднее отклонение',value:delay(summary.averageDelaySeconds),suffix:'от расписания',Icon:Clock3},
     {name:'Худшее отклонение',value:delay(summary.worstDelaySeconds),suffix:'прогноз задержки',Icon:ChartNoAxesColumnIncreasing,tone:'high'},
   ] : [
-    {name:'ТС на линии',value:summary.activeVehicles,suffix:'в демо-сценарии',Icon:BusFront},
-    {name:'Маршруты',value:summary.routeCount,suffix:'ночная сеть',Icon:RouteIcon},
+    {name:'ТС на линии',value:summary.activeVehicles,suffix:'',Icon:BusFront},
+    {name:'Маршруты',value:summary.routeCount,suffix:'',Icon:RouteIcon},
     {name:'Высокий риск',value:summary.highRiskCount,suffix:'ТС',Icon:TriangleAlert,tone:'high'},
     {name:'Средний прогноз',value:delay(summary.averageDelaySeconds),suffix:'мин:сек',Icon:Clock3,tone:'medium'},
-    {name:'Данные свежие',value:`${summary.freshPercent}%`,suffix:'по порогу связи',Icon:Radio},
+    {name:'Связь',value:`${summary.freshPercent}%`,suffix:'',Icon:Radio},
   ];
-  return <div className={`metrics ${routeMode?'four':''}`}>{items.map(({name,value,suffix,Icon,tone})=><div className={`metric ${tone||''}`} key={name}><span className="metric-icon"><Icon size={28} strokeWidth={1.7}/></span><div><span className="metric-label">{name}</span><div className="metric-value">{value}<small>{suffix}</small></div></div></div>)}</div>;
+  return <div className={`metrics ${routeMode?'four':''}`}>{items.map(({name,value,suffix,Icon,tone})=><div className={`metric ${tone||''}`} key={name}><span className="metric-icon"><Icon size={28} strokeWidth={1.7}/></span><div><span className="metric-label">{name}</span><div className="metric-value">{value}{suffix&&<small>{suffix}</small>}</div></div></div>)}</div>;
 }
 
 function SettingsView({settings,onSaved}:{settings:Settings;onSaved:()=>void}) {
@@ -41,13 +42,17 @@ function Filters({view,search,riskFilter,navigate}:{view:View;search:string;risk
 
 export default function App() {
   const [query,setQuery]=useState(readQuery);
+  const simulation=useSimulation();
+  const [replaySelectedId,setReplaySelectedId]=useState<number|null>(null);
+  const replayVehicles=simulation.state?.telemetry?.vehicles || [];
+  const replaySelected=replayVehicles.find(v=>v.unitId===replaySelectedId) || null;
   const view=(['network','routes','incidents','history','settings'].includes(query.get('view')||'')?query.get('view'):'network') as View;
   const routeId=query.get('route'), tab=query.get('tab')||'overview';
   const period=[30,60,180].includes(Number(query.get('period')))?Number(query.get('period')):60;
   const direction=query.get('direction')==='1'?1:0;
   const riskFilter=(['low','medium','high'].includes(query.get('risk')||'')?query.get('risk'):'all') as Risk|'all';
   const search=query.get('q')||'';
-  const serviceFilter=(['all','night','day'].includes(query.get('service')||'')?query.get('service'):'night') as ServiceFilter;
+  const serviceFilter=(['all','night','day'].includes(query.get('service')||'')?query.get('service'):'all') as ServiceFilter;
   const [data,setData]=useState<Snapshot|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[refresh,setRefresh]=useState(0),[requesting,setRequesting]=useState(false);
   const [favorites,setFavorites]=useState<FavoriteRoute[]>(readFavorites);
   const [preview,setPreview]=useState<Route|null>(null);
@@ -109,8 +114,9 @@ export default function App() {
       {routeId&&<div className="breadcrumbs"><a href="/">Сеть</a><ChevronRight size={13}/><a href="/?view=routes">Маршруты</a><ChevronRight size={13}/><span>{route?`Маршрут ${route.number}`:'Маршрут'}</span><a href="/" className="back-link"><ArrowLeft size={14}/>Обзор сети</a></div>}
       <header className="page-header"><div><div className="title-row"><h1>{heading}</h1>{route&&<span className="status-pill"><i/>Демо-линия</span>}</div>{route&&<p className="route-subtitle">{route.name}</p>}</div><div className="header-actions">{route?<><FavoriteButton route={route}/><label className="select-icon"><Clock3 size={16}/><select aria-label="Период" value={period} onChange={e=>navigate({period:e.target.value})}><option value={30}>Последние 30 минут</option><option value={60}>Последний час</option><option value={180}>Последние 3 часа</option></select></label></>:<div className="header-clock"><strong>{new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'})}</strong><span>Москва · МСК</span></div>}<button className="icon-button" aria-label="Обновить данные" title="Обновить данные" disabled={requesting} onClick={()=>setRefresh(n=>n+1)}><RefreshCw size={17} className={requesting?'spin':''}/></button></div></header>
       <div className="mobile-shortcuts"><a href="/?view=settings" onClick={e=>{e.preventDefault();navigate({view:'settings',route:null,tab:null});}}><Settings2 size={14}/>Настройки</a></div>
-      <div className="data-strip"><span><i className={`connection-dot ${error?'disconnected':''}`}/>{data?.mode==='live'?'Онлайн':'Демонстрационный режим'}</span><span>Реальные линии · тестовые ТС и прогнозы</span><span className="data-updated">Снимок {data?time(data.generatedAt):'—'} · автообновление 15 сек <Info size={13}/></span></div>
-      {error&&<div className="error-banner" role="alert"><TriangleAlert size={18}/><div><strong>{data?'Нет связи с API. Показан последний полученный снимок.':'Не удалось загрузить данные'}</strong><span>{error}</span></div><button onClick={()=>setRefresh(v=>v+1)}>Повторить</button></div>}
+      {!routeId && view === 'network' && <ReplayControls simulation={simulation}/>}
+      {(routeId || view !== 'network') && <div className="data-strip"><span><i className={`connection-dot ${error?'disconnected':''}`}/>{data?.mode==='live'?'Онлайн':'Демонстрационный режим'}</span><span>Реальные линии · тестовые ТС и прогнозы</span><span className="data-updated">Снимок {data?time(data.generatedAt):'—'} · автообновление 15 сек <Info size={13}/></span></div>}
+      {error && <div className="error-banner" role="alert"><TriangleAlert size={18}/><div><strong>{data ? 'Нет связи с API. Показан последний полученный снимок.' : 'Не удалось загрузить данные'}</strong><span>{error}</span></div><button onClick={() => setRefresh(v => v + 1)}>Повторить</button></div>}
       {loading&&!data?<div className="loading-state" role="status"><LoaderCircle className="spin" size={27}/><strong>Загружаем диспетчерскую…</strong></div>:data&&<>
         {routeId&&!route?<div className="empty-state">Маршрут не найден<a href="/?view=routes">Открыть каталог</a></div>:route?<>
           <div className="route-tabs" role="navigation" aria-label="Разделы маршрута">{[['overview','Обзор'],['whatif','What-if'],['incidents','Инциденты'],['history','История']].map(([value,label])=><button key={value} className={tab===value?'active':''} onClick={()=>navigate({tab:value})}>{label}</button>)}{tab==='whatif'&&<span className="model-note"><Info size={14}/>Модель сценариев · демо</span>}</div>
@@ -121,9 +127,9 @@ export default function App() {
             <div className="route-bottom"><section className="panel chart-panel"><div className="section-heading"><h2>Прогнозируемое отклонение на маршруте</h2><Info size={15} className="muted"/></div><Chart points={data.history.map(p=>({label:time(p.time),a:p.maximum/60,b:p.average/60}))}/><p className="chart-footnote">Демо-история · последние {period} минут</p></section><section className="panel stop-panel"><div className="section-heading"><h2>Остановки по маршруту</h2><span className="subtle">Приближённо</span></div><div className="table-scroll"><table className="stop-table"><thead><tr><th>Остановка</th><th>По плану</th><th>Прогноз</th><th>Отклонение</th></tr></thead><tbody>{route.stops.map(s=><tr key={s.id} className={s.delaySeconds===Math.max(...route.stops.map(x=>x.delaySeconds))?'worst-stop':''}><td><span className="stop-dot"/>{s.name}</td><td>{time(s.scheduledAt)}</td><td>{time(s.predictedAt)}</td><td className={s.risk}>{delay(s.delaySeconds)}</td></tr>)}</tbody></table></div></section></div>
           </>}
         </>:view==='settings'?<SettingsView settings={data.settings} onSaved={()=>{void api.snapshot(null,direction,period).then(setData).catch(e=>setError(e.message));}}/>:view==='history'?<><div className="list-toolbar"><h2>История сети</h2><Filters view={view} search={search} riskFilter={riskFilter} navigate={navigate}/></div><History/></>:view==='incidents'?<><Metrics summary={serviceSummary} routeMode={false}/><div className="list-toolbar"><h2>Инциденты сети <span className="subtle">{filteredIncidents.length}</span></h2><Filters view={view} search={search} riskFilter={riskFilter} navigate={navigate}/></div><Attention all/></>:<>
-          <div className="service-filter" role="group" aria-label="Тип маршрутов">{([['night','Ночные маршруты'],['day','Дневные маршруты'],['all','Все']] as [ServiceFilter,string][]).map(([value,label])=><button key={value} className={serviceFilter===value?'active':''} aria-pressed={serviceFilter===value} onClick={()=>navigate({service:value==='night'?null:value})}>{label}<small>{value==='all'?data.routes.length:data.routes.filter(r=>r.serviceType===value).length}</small></button>)}</div>
-          <Metrics summary={serviceSummary} routeMode={false}/>
-          {view==='network'&&<div className="map-and-attention"><Suspense fallback={<div className="map-panel skeleton"/>}><TransportMap routes={filteredRoutes} settings={data.settings} selected={selected} onSelect={selectVehicle} onRouteSelect={id=>{const r=data.routes.find(r=>r.id===id);if(r)showRouteDetails(r);}}/></Suspense><Attention/></div>}
+          <div className="service-filter" role="group" aria-label="Тип маршрутов">{([['all','Все'],['day','Дневные'],['night','Ночные']] as [ServiceFilter,string][]).map(([value,label])=><button key={value} className={serviceFilter===value?'active':''} aria-pressed={serviceFilter===value} onClick={()=>navigate({service:value==='all'?null:value})}>{label}<small>{value==='all'?data.routes.length:data.routes.filter(r=>r.serviceType===value).length}</small></button>)}</div>
+          {view==='network'?<ReplayMetrics state={simulation.state}/>:<Metrics summary={serviceSummary} routeMode={false}/>}
+          {view==='network'&&<div className="map-and-attention"><Suspense fallback={<div className="map-panel skeleton"/>}><TransportMap routes={filteredRoutes} settings={data.settings} selected={null} onSelect={selectVehicle} replayVehicles={replayVehicles} replayRunning={Boolean(simulation.state?.running) && !simulation.error} replaySpeed={simulation.state?.speed} replaySession={simulation.state?.session} onReplaySelect={v=>setReplaySelectedId(v.unitId)} onRouteSelect={id=>{const r=data.routes.find(r=>r.id===id);if(r)showRouteDetails(r);}}/></Suspense><ReplayDetails state={simulation.state} selected={replaySelected}/></div>}
           <section className="panel route-table-panel"><div className="section-heading"><h2>Маршруты <span className="subtle">{filteredRoutes.length}</span>{view==='routes'&&favorites.length>0&&<span className="favorites-hint"><Star size={13}/>Избранные — в начале</span>}</h2><Filters view={view} search={search} riskFilter={riskFilter} navigate={navigate}/></div><RouteTable routes={view==='network'?filteredRoutes.slice(0,6):filteredRoutes}/>{view==='network'&&filteredRoutes.length>6&&<button className="table-footer-link" onClick={()=>navigate({view:'routes'})}>Все {filteredRoutes.length} маршрутов <ArrowRight size={15}/></button>}</section>
         </>}
         <footer className="page-footer"><span><ShieldAlert size={13}/>Демо: прогнозы не предназначены для оперативных решений</span><span>Геометрия: открытые данные Москвы · август 2026</span></footer>

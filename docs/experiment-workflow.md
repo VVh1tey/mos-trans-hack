@@ -6,11 +6,13 @@
 
 ```sh
 docker compose -f compose.train.yaml run --build --rm trainer
+docker compose -f compose.train.yaml run --build --rm -e TRAIN_MODULE=experiments.catboost_clean trainer
+docker compose -f compose.train.yaml run --build --rm -e TRAIN_MODULE=experiments.catboost_timeseries trainer
 docker compose -f compose.train.yaml run --rm -e TRAIN_MODULE=experiments.mean_residual trainer
 docker compose -f compose.train.yaml run --rm trainer python compare.py
 ```
 
-Каждый запуск создаёт `runs/<run_id>/` с моделью, `metrics.json` и `manifest.json`. В манифесте есть модуль, версия признаков, хеши входных CSV и кода, хеш набора данных и Git commit (если передать `GIT_COMMIT` в окружении). `runs/index.csv` — пересоздаваемая таблица для просмотра и сортировки. Сравнивайте MAE только у запусков с одинаковым `dataset_fingerprint` и одинаковым тестовым протоколом.
+Каждый запуск создаёт `runs/<run_id>/` с моделью, `metrics.json` и `manifest.json`. В манифесте есть модуль, версия признаков, хеши входных CSV и кода, хеш набора данных и Git commit (если передать `GIT_COMMIT` в окружении). `runs/index.csv` — пересоздаваемая таблица для просмотра и сортировки. Сравнивайте MAE только у запусков с одинаковым `dataset_fingerprint` и одинаковым `evaluation_protocol`.
 
 Чтобы попробовать новую модель или признаки, создайте `ml/experiments/<name>.py` с `FEATURE_SET` и тремя функциями:
 
@@ -20,16 +22,46 @@ def predict(model, rows, dataset_root, split): ...
 def save_model(model, run_dir): ...  # возвращает путь к файлу в run_dir
 ```
 
-Затем запустите `docker compose -f compose.train.yaml run --build --rm -e TRAIN_MODULE=experiments.<name> trainer`. `dataset_root` даёт доступ к остальным CSV, а `split` позволяет найти файлы train/test. Код признаков должен быть одинаковым при проверке и онлайн-инференсе. Сейчас онлайн-адаптер поддерживает лишь JSON вида `{"name": "...", "offset_seconds": 0}`. Для CatBoost или иной модели добавьте загрузку её артефакта в `ml/service.py` и те же признаки из события онлайн.
+Затем запустите `docker compose -f compose.train.yaml run --build --rm -e TRAIN_MODULE=experiments.<name> trainer`. `dataset_root` даёт доступ к остальным CSV, а `split` позволяет найти файлы train/test. Код признаков должен быть одинаковым при проверке и онлайн-инференсе. Онлайн-адаптер поддерживает два эксперимента CatBoost; для другого модуля потребуется добавить загрузку модели и предсказание в `ml/service.py`.
 
 Выберите совместимый запуск по ID из `runs/index.csv`:
 
 ```sh
-docker compose -f compose.train.yaml run --rm trainer python select.py <run_id>
+docker compose -f compose.train.yaml run --rm trainer python choose.py <run_id>
 docker compose up -d --force-recreate ml
 ```
 
-`runs/selected.json` и `runs/selection.json` фиксируют активный выбор. Откат — повторить `select.py` со старым ID.
+`experiments.catboost_clean` использует только `cur_dev_s`. Перед обучением модуль
+исключает из train все `tr_id`, которые встречаются в test или validate; исходные CSV
+не меняются. Модель сохраняется как `catboost.cbm`, а после выбора запуска онлайн-сервис
+загружает этот файл. Для проверки RT-предсказания поднимите `docker compose up -d --build ml backend`
+и отправьте JSON с `sample_id` и `cur_dev_s` на `POST http://localhost:18000/api/predict`.
+
+Для отправки на платформу после выбора запуска выполните:
+
+```sh
+docker compose -f compose.train.yaml run --build --rm trainer python -m experiments.catboost_clean submit
+```
+
+Команда создаёт `outputs/submission.csv` в формате `sample_id;prediction`, проверяя
+совпадение ID с шаблоном организаторов.
+
+`experiments.catboost_timeseries` использует разметку из train и test. Он удаляет
+повторную точку той же машины за 5 минут, если совпали `cur_dev_s` и ответ;
+для оценки делит данные по времени на ранний train, отдельные validation и test,
+делает три последовательных CV-фолда и оставляет 15 минут зазора между окнами.
+Финальная модель затем обучается на всех очищенных размеченных точках. Скрытый
+validate не имеет ответов и служит только для сабмита. Его MAE узнать локально нельзя.
+Чтобы создать отдельный файл без смены активной модели, используйте:
+
+```sh
+docker compose -f compose.train.yaml run --build --rm -e SUBMISSION_FILE=/outputs/submission_timeseries.csv trainer python -m experiments.catboost_timeseries submit <run_id>
+```
+
+MAE этого эксперимента рассчитан на других временных окнах, поэтому его нельзя
+напрямую сравнивать с MAE первого CatBoost на исходном test.
+
+`runs/selection.json` фиксирует активный выбор. Откат — повторить `choose.py` со старым ID.
 
 ## Работа командой
 

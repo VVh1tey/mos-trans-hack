@@ -1,4 +1,4 @@
-import type { Scenario, ScenarioParameters, Settings, Snapshot } from './types';
+import type { Scenario, ScenarioParameters, Settings, Snapshot, SimulationStatus } from './types';
 // All demo data comes from HTTP. A real backend can implement the same contract.
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const timeout = AbortSignal.timeout(15000);
@@ -10,6 +10,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 export const api = {
+  simulation: (signal?: AbortSignal) => request<SimulationStatus>('/simulation', { signal }),
+  controlSimulation: (action: 'start' | 'stop' | 'reset' | 'speed', speed?: number) => request<SimulationStatus>('/simulation', { method: 'POST', body: JSON.stringify({ action, speed }) }),
   snapshot: (routeId: string | null, direction: number, period: number, signal?: AbortSignal) => request<Snapshot>(`${routeId ? `/routes/${encodeURIComponent(routeId)}` : ''}?direction=${direction}&period=${period}`, { signal }),
   saveSettings: (settings: Settings) => request<Settings>('/settings', { method: 'POST', body: JSON.stringify(settings) }),
   scenario: (routeId: string, parameters: ScenarioParameters) => request<Scenario>(`/routes/${encodeURIComponent(routeId)}/scenario`, { method: 'POST', body: JSON.stringify(parameters) }),

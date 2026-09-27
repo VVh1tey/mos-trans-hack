@@ -1,0 +1,12 @@
+.git
+**/node_modules
+**/dist
+**/__pycache__
+dataset
+data
+runs
+outputs
+handoff
+frontend/references
+frontend/test-results
+.impeccable

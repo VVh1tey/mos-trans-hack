@@ -40,7 +40,7 @@ services:
     build:
       context: ./ml
     environment:
-      MODEL_FILE: /runs/selected.json
+      RUNS_DIR: /runs
     volumes:
       - ./runs:/runs:ro
     healthcheck:
@@ -54,6 +54,15 @@ services:
       context: ./backend
     environment:
       ML_URL: http://ml:8001
+      ROUTES_IMPORT_DIR: /app/import/routes
+      EMULATOR_URL: http://emulator:18080
+      INGEST_URL: http://ingest:9101
+      NDTP_TARGET_HOST: ingest
+      DATASET_DIR: /dataset
+    volumes:
+      - ./data/moscowmap:/app/import/routes:ro
+      - ./dataset/test:/dataset/test:ro
+      - ./dataset/labels/labels_test.csv:/dataset/labels/labels_test.csv:ro
     ports:
       - '127.0.0.1:${BACKEND_PORT:-18000}:8000'
     depends_on:
@@ -69,7 +78,7 @@ services:
   ingest:
     build:
       context: ./backend
-    command: [python, scaffold.py]
+    command: [python, ingest.py]
     environment:
       ROLE: ingest
       HEALTH_PORT: '9101'
@@ -176,10 +185,9 @@ services:
       retries: 15
 
   frontend:
-    image: nginx:1.27-alpine
-    volumes:
-      - ./frontend/mock:/usr/share/nginx/html:ro
-      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - '127.0.0.1:${FRONTEND_PORT:-18080}:80'
     depends_on:

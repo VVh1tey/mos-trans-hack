@@ -8,7 +8,7 @@
 | --- | --- |
 | `ml/` | Обучение, эксперименты, выбор модели и HTTP-инференс |
 | `backend/` | API и заглушки ingest, worker, scheduler |
-| `frontend/` | Демонстрационная панель; рабочий интерфейс ещё предстоит сделать |
+| `frontend/` | React-дашборд: карта сети, маршруты, инциденты и What-if на HTTP-моках |
 | `contracts/` | Форматы обмена между компонентами |
 | `infra/` | PostgreSQL, Redis, Prometheus, Grafana, nginx |
 | `docs/` | Схемы и архитектурные решения |
@@ -24,15 +24,19 @@ docker compose up --build -d --wait
 
 | Сервис | Адрес | Состояние |
 | --- | --- | --- |
-| Панель | `http://localhost:18080` | Демонстрационный экран |
+| Панель | `http://localhost:18080` | Рабочий интерфейс с демонстрационным API |
 | Backend | `http://localhost:18000/health` | Проксирует `POST /api/predict` в ML |
 | Grafana | `http://localhost:13000` | Состояние сервисов; `admin` / `admin_local` |
 | Prometheus | `http://localhost:19090/targets` | Метрики процессов |
-| NDTP ingest | `localhost:9201` | Пока считает байты без разбора пакетов |
+| NDTP ingest | `localhost:9201` | Принимает NDTP, проверяет CRC и декодирует Nav00 |
+
+Фронтенд можно запустить без Docker: `python backend/app.py`, затем в другом
+терминале `cd frontend`, `npm ci`, `npm run dev` → `http://127.0.0.1:5173`.
+[Экраны, данные и проверки](frontend/README.md) · [контракт Dashboard API](contracts/dashboard.md).
 
 Пробный запрос: `POST http://localhost:18000/api/predict` с JSON `{"sample_id":"demo","cur_dev_s":42}`. Пока модель не выбрана, ML возвращает `42` и имя `fallback-cur-dev`. PostgreSQL содержит таблицы `predictions` и `alerts`; Redis и все online-процессы поднимаются, но обработку реальной телеметрии ещё нужно реализовать.
 
-Остановить: `docker compose down`. Данные PostgreSQL, Redis и Grafana остаются в Docker volumes. Выданный эмулятор включается отдельно: `docker load -i dataset/ndtp-telemetry-emulator.tar`, затем `docker compose --profile emulator up -d emulator`. Его API — `http://localhost:18081`; укажите `targetHost: ingest`, `targetPort: 9201`.
+Остановить: `docker compose down`. Данные PostgreSQL, Redis и Grafana остаются в Docker volumes. Выданный эмулятор включается отдельно: `docker load -i dataset/ndtp-telemetry-emulator.tar`, затем `docker compose --profile emulator up -d --build`. На странице «Сеть» (`http://localhost:18080`) блок «Симулятор NDTP» запускает и останавливает поток, показывает позиции, скорость и свежесть пакетов. [Инструкция и границы интеграции](docs/ndtp-simulation.md). API самого эмулятора — `http://localhost:18081`.
 
 ## Обучение и выбор модели
 
@@ -42,12 +46,8 @@ docker compose up --build -d --wait
 docker compose -f compose.train.yaml run --build --rm trainer
 docker compose -f compose.train.yaml run --rm -e TRAIN_MODULE=experiments.mean_residual trainer
 docker compose -f compose.train.yaml run --rm trainer python compare.py
-docker compose -f compose.train.yaml run --rm trainer python select.py <run_id>
+docker compose -f compose.train.yaml run --rm trainer python choose.py <run_id>
 docker compose up -d --force-recreate ml
 ```
 
-Каждый запуск создаёт отдельную папку `runs/<run_id>/` с `manifest.json`, `metrics.json` и файлом модели. `compare.py` создаёт `runs/index.csv`. `select.py` копирует совместимую модель в `runs/selected.json`, откуда её читает онлайн-сервис. Сравнивайте MAE только для одинакового `dataset_fingerprint`. Добавление признаков и моделей, общий обмен результатами и передача проекта описаны в [инструкции по экспериментам](docs/experiment-workflow.md).
-
-## Разработка
-
-Код присылайте через Git и PR; датасет, веса и `runs/` в Git не добавляйте. В PR укажите команду запуска, входы, выходы и способ проверки. Сверяйте API с [контрактами](contracts/README.md), а поток и границы заглушек — с [архитектурными решениями](docs/architecture-decisions.md). Один проверяемый кусок работы на PR удобнее для интеграции.
+Каждый запуск создаёт отдельную папку `runs/<run_id>/` с `manifest.json`, `metrics.json` и файлом модели. `compare.py` создаёт `runs/index.csv`. `choose.py` записывает активный запуск в `runs/selection.json`; онлайн-сервис загружает модель из папки запуска. Сравнивайте MAE только для одинакового `dataset_fingerprint`. Добавление признаков и моделей, общий обмен результатами и передача проекта описаны в [инструкции по экспериментам](docs/experiment-workflow.md).

@@ -17,3 +17,52 @@
 
 .service-filter{display:flex;gap:7px;margin:0 0 14px;padding:4px;width:max-content;max-width:100%;border:1px solid var(--border);border-radius:10px;background:#fff}.service-filter button{border:0;border-radius:7px;background:transparent;color:#536177;padding:9px 15px;font-size:11px}.service-filter button small{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;margin-left:3px;border-radius:10px;background:#e9edf2;color:#47566b;font-size:9px;font-weight:700}.service-filter button.active{background:var(--nav);color:#fff}.service-filter button.active small{background:#ffffff2b;color:white}.service-filter button:not(.active):hover{background:#f4f5f7}
 @media(max-width:760px){.service-filter{width:100%;display:grid;grid-template-columns:1fr 1fr 52px}.service-filter button{padding:9px 7px;font-size:10px}}
+.simulation-panel { margin-bottom: 20px; }
+.simulation-heading { flex-wrap: wrap; gap: 14px; }
+.simulation-heading p { margin: 6px 0 0; color: var(--muted, #68758a); font-size: 12px; }
+.simulation-actions, .simulation-status { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; }
+.simulation-status { padding: 14px 16px; border-bottom: 1px solid #e2e7ed; font-variant-numeric: tabular-nums; }
+.simulation-message { margin: 12px 16px; line-height: 1.6; }
+.simulation-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 1fr); gap: 16px; padding: 0 16px 16px; }
+.simulation-content .telemetry-map { min-height: 300px; height: 300px; }
+.simulation-table { align-self: start; }
+.telemetry-marker { padding: 5px 7px; border: 2px solid #fff; border-radius: 5px; background: #900b37; color: #fff; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.telemetry-marker.telemetry-stale { background: #68758a; }
+@media (max-width: 1000px) { .simulation-content { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .simulation-actions { gap: 8px; } .simulation-actions button { min-height: 40px; } .simulation-status { gap: 8px 14px; } .simulation-content { padding: 0 10px 10px; } }
+.replay-controls { margin-bottom: 18px; padding: 16px; }
+.replay-control-row, .replay-actions, .replay-timeline { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.replay-control-row { justify-content: space-between; }
+.replay-title { display: flex; flex-direction: column; gap: 5px; }
+.replay-title strong { font-size: 15px; }
+.replay-title span, .replay-timeline { font-size: 13px; color: #425168; }
+.replay-actions label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.replay-actions button { min-height: 40px; }
+.replay-timeline { margin-top: 14px; font-variant-numeric: tabular-nums; }
+.replay-timeline progress { min-width: 100px; flex: 1; height: 6px; accent-color: #900b37; }
+.replay-timeline progress::-webkit-progress-bar { background: #e2e7ed; border-radius: 4px; }
+.replay-timeline progress::-webkit-progress-value { background: #900b37; border-radius: 4px; }
+.replay-error { margin-top: 12px; display: flex; align-items: center; gap: 12px; color: #b52238; }
+.replay-metrics .metric-label { font-size: 13px; color: #425168; }
+.replay-bus { background: #900b37; transition: opacity .25s, filter .25s; }
+.replay-bus.gps-lost { opacity: .48; filter: grayscale(.8); border: 2px dashed #6b7280; }
+.replay-bus.gps-suspect { opacity: .68; border: 2px solid #d18b21; }
+.map-route-toggle { display: flex; align-items: center; gap: 7px; min-height: 32px; color: #182638; cursor: pointer; }
+.map-route-toggle input { width: 16px; height: 16px; margin: 0; accent-color: #900b37; }
+.replay-evaluation, .replay-vehicle-details { padding: 0 16px 16px; font-size: 13px; line-height: 1.6; }
+.replay-details { max-height: 520px; overflow-y: auto; }
+.replay-vehicle-details dl { margin: 0; }
+.replay-vehicle-details dl>div { padding: 8px 0; border-bottom: 1px solid #e2e7ed; }
+.replay-vehicle-details dt { color: #425168; }
+.replay-vehicle-details dd { margin: 3px 0 0; font-weight: 600; }
+.replay-prediction { padding: 10px 0; border-top: 1px solid #e2e7ed; font-variant-numeric: tabular-nums; }
+.replay-prediction strong { display: flex; justify-content: space-between; gap: 8px; }
+.replay-note { color: #425168; }
+@media (max-width: 760px) {
+  .replay-controls { padding: 12px; }
+  .replay-actions { gap: 8px; }
+  .replay-timeline progress { flex-basis: 70%; }
+  .map-caption:has(.map-route-toggle) { max-width: calc(100% - 65px); flex-wrap: wrap; gap: 4px; padding: 7px; }
+  .map-route-toggle { font-size: 12px; }
+  .replay-details { max-height: none; }
+}
