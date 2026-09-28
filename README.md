@@ -14,7 +14,7 @@ Backend отправляет записи датасета по TCP в форм�
 
 | Пункт формы | Материал | Статус |
 | --- | --- | --- |
-| 1. CSV по validate | [submission_catboost_robust.csv](submission/submission_catboost_robust.csv), [метаданные](submission/manifest.json) | 151 прогноз, `sample_id;prediction`, порядок validate сохранён. На платформу ещё не загружен |
+| 1. CSV по validate | [submission_catboost_robust.csv](submission/submission_catboost_robust.csv), [метаданные](submission/manifest.json) | 151 прогноз, `sample_id;prediction`, порядок validate сохранён.|
 | 2. Система из трёх модулей в Docker | [Репозиторий](https://github.com/VVh1tey/mos-trans-hack), [Compose](compose.yaml), инструкция ниже | ML + backend + веб-дашборд запускаются локально |
 | 3. Инструкция жюри | Этот README: запуск и подача потока; [гайд с экранами](docs/dashboard-guide.md) | Исторический replay, отдельный эмулятор, прогнозы, ограничения инцидентов, метрики |
 | 4. Документация кода и API | [PyDoc](docs/pydoc/index.html), [OpenAPI](backend/openapi.json) | После запуска: http://localhost:18080/code-docs/ и http://localhost:18000/docs |
